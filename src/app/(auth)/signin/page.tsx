@@ -1,21 +1,26 @@
-'use client'
-import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
-import { auth } from '@/lib/firebase'
-import { useState } from 'react'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
+import Image from "next/image";
+import { buttonVariants } from "@/components/ui/button";
+import { AuthForm } from "@/components/authForm";
 
-export default function SignInPage() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const signin = async () => { await signInWithEmailAndPassword(auth, email, password) }
-  const signGoogle = async () => { const provider = new GoogleAuthProvider(); await signInWithPopup(auth, provider) }
-  return (
-    <div className='h-screen w-screen grid place-content-center gap-3'>
-      <Input placeholder='Email' value={email} onChange={e => setEmail(e.target.value)} />
-      <Input placeholder='Password' type='password' value={password} onChange={e => setPassword(e.target.value)} />
-      <Button onClick={signin}>Sign in</Button>
-      <Button onClick={signGoogle}>Google</Button>
-    </div>
-  )
+
+
+export default function Page(){
+
+    return (
+      <>
+        <div className="flex flex-col items-center justify-center w-full min-h-screen bg-cover bg-center" style={{ backgroundImage: "url('/images/background/background.png')" }}>
+          <div className="bg-white bg-opacity-80 p-8 rounded-lg shadow-lg w-[520px] h-[700px] overflow-y-auto">
+            <Image
+              src="/images/logo/logo.png"
+              alt="Logo"
+              width={100}
+              height={100}
+              className="mb-6 mx-auto"
+            />
+            <AuthForm />
+          </div>
+        </div>
+      </>
+      );
+
 }

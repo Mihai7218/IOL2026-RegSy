@@ -24,7 +24,7 @@ export type FlightLeg = {
   terminal: string
   location: string
   airline: string
-  flightNo: string
+  flight_no: string
   datetime: string // ISO
 }
 export const fetchTransport = async (): Promise<FlightLeg[]> => {
@@ -45,7 +45,14 @@ export const fetchPayments = async (): Promise<Payment[]> => { return [] }
 export const createPaymentIntent = async (_amount: number, _currency: string) => { /* TODO */ }
 
 // Teams and Members
-export type Team = { id?: string; name: string; languages: string[]; memberCount?: number }
+// Align Team shape with UI schema in src/schemas/team.ts
+export type Team = {
+  id?: string
+  team_name: string
+  team_language: string
+  city_tour?: string
+  excursion_route?: string
+}
 export type Member = { id?: string; teamId: string; fullName: string; gender?: string; diet?: string; email?: string; phone?: string; passportNo?: string; notes?: string }
 
 export const fetchTeams = async (): Promise<Team[]> => { return [] }

@@ -1,13 +1,41 @@
 import { z } from 'zod'
 
-export const memberSchema = z.object({
-  teamId: z.string().min(1),
-  fullName: z.string().min(1),
-  gender: z.string().optional(),
-  diet: z.string().optional(),
-  email: z.string().email().optional(),
-  phone: z.string().optional(),
-  passportNo: z.string().optional(),
-  notes: z.string().optional()
+// Order reflects UI sections requirement
+export const memberFormSchema = z.object({
+  // Personal Information
+  role: z.string().min(1, 'Role is required'),
+  team: z.string().optional(),
+  given_name: z.string().min(1, 'Given name is required'),
+  middle_name: z.string().optional(),
+  last_name: z.string().min(1, 'Last name is required'),
+  display_name: z.string().min(1, 'Display name is required'),
+  preferred_name: z.string().min(1, 'Preferred name is required'),
+  gender: z.string().min(1, 'Gender is required'),
+  other_gender: z.string().optional(),
+  date_of_birth: z.string().min(1, 'Date of birth is required'),
+  tshirt_size: z.string().min(1, 'T-shirt size is required'),
+
+  // Contest Information
+  indiv_language: z.string().optional(),
+  indiv_contest_req: z.string().optional(),
+
+  // Travel
+  passport_number: z.string().optional(),
+  issue_date: z.string().optional(),
+  expiry_date: z.string().optional(),
+
+  // Dietary Requirement
+  food_req: z.string().array().optional(),
+  other_food_req: z.string().optional(),
+}).superRefine((val, ctx) => {
+  // If gender is 'Other', require other_gender (similar to terminal-other pattern)
+  if (val.gender === 'Other' && !val.other_gender?.trim()) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Please specify gender when selecting Other',
+      path: ['other_gender'],
+    })
+  }
 })
-export type MemberForm = z.infer<typeof memberSchema>
+
+export type MemberForm = z.infer<typeof memberFormSchema>

@@ -1,6 +1,6 @@
 'use client'
 
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
@@ -22,10 +22,11 @@ export default function InvitesPage() {
   }
 
   return (
-    <div className='space-y-4'>
-      
+    <div className='space-y-4 px-10'>
+      <div className='flex items-center justify-between'>
+        <h1 className='text-xl font-semibold'>Create Invite</h1>
+      </div>
       <Card>
-        <CardHeader>Create Invite</CardHeader>
         <CardContent className='space-y-3'>
           <div className='grid grid-cols-2 gap-4'>
             <div><Label>Country Key</Label><Input value={countryKey} onChange={e => setCountryKey(e.target.value)} /></div>

@@ -1,13 +1,25 @@
 import { z } from 'zod'
 
+// Allow empty string for optional email to avoid validation error when the field is left blank
+const optionalEmail = z.union([z.string().email('Invalid email address'), z.literal('')]).optional()
+
+export const contactPersonRequired = z.object({
+  name: z.string().min(1, 'Name is required'),
+  email: z.string().email('Invalid email address'),
+  whatsapp: z.string().optional(),
+  phone: z.string().optional(),
+})
+
+export const contactPersonOptional = z.object({
+  name: z.string().optional(),
+  email: optionalEmail,
+  whatsapp: z.string().optional(),
+  phone: z.string().optional(),
+})
+
 export const contactSchema = z.object({
-    name_1: z.string().min(1, "Name is required"),
-    email_1: z.string().email("Invalid email address"),
-    whatsapp_1: z.string().optional(),
-    phone_1: z.string().optional(),
-    name_2: z.string().optional(),
-    email_2: z.string().optional(),
-    whatsapp_2: z.string().optional(),
-    phone_2: z.string().optional(),
-  });
+  primary: contactPersonRequired,
+  secondary: contactPersonOptional.optional(),
+})
+
 export type ContactForm = z.infer<typeof contactSchema>

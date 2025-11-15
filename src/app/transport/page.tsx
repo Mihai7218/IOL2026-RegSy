@@ -7,25 +7,27 @@ import { Button } from '@/components/ui/button'
 import { Controller, useForm } from 'react-hook-form'
 import * as z from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { flightLegSchema, FlightLegForm } from '@/schemas/transport'
+import { flightLegSchema, FlightLegForm, TERMINAL_OPTIONS, flightLegFormSchema, FlightLegUiForm } from '@/schemas/transport'
 import { useEffect } from 'react'
 import { fetchTransport, upsertTransport } from '@/services/firebaseApi'
 import { toast } from 'sonner'
 import { FieldGroup } from '@/components/ui/field'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 
-type FormType = { arrival: FlightLegForm; departure: FlightLegForm }
+type FormType = { arrival: FlightLegUiForm; departure: FlightLegUiForm }
 
 const formSchema = z.object({
-  arrival: flightLegSchema,
-  departure: flightLegSchema,
+  arrival: flightLegFormSchema,
+  departure: flightLegFormSchema,
 })
 
-const defaultLeg = (direction: 'arrival' | 'departure'): FlightLegForm => ({
+const defaultLeg = (direction: 'arrival' | 'departure'): FlightLegUiForm => ({
   direction,
-  terminal: '',
+  terminal_option: TERMINAL_OPTIONS[0],
+  terminal_other: '',
   location: '',
   airline: '',
-  flightNo: '',
+  flight_no: '',
   datetime: new Date().toISOString(),
 })
 
@@ -56,19 +58,42 @@ export default function TransportPage() {
 
   useEffect(() => {
     fetchTransport().then((legs) => {
-      const a = (legs.find((l) => l.direction === 'arrival') ?? defaultLeg('arrival')) as FlightLegForm
-      const d = (legs.find((l) => l.direction === 'departure') ?? defaultLeg('departure')) as FlightLegForm
-      // Ensure direction keys are set
-      form.reset({ arrival: { ...a, direction: 'arrival' }, departure: { ...d, direction: 'departure' } })
+      const aRaw = legs.find((l) => l.direction === 'arrival')
+      const dRaw = legs.find((l) => l.direction === 'departure')
+
+      const toUi = (raw: FlightLegForm | undefined, dir: 'arrival'|'departure'): FlightLegUiForm => {
+        if (!raw) return defaultLeg(dir)
+        const inOptions = (TERMINAL_OPTIONS as readonly string[]).includes(raw.terminal as any)
+        return {
+          direction: dir,
+          terminal_option: (inOptions ? (raw.terminal as any) : 'Other') as FlightLegUiForm['terminal_option'],
+          terminal_other: inOptions ? '' : raw.terminal,
+          location: raw.location,
+          airline: raw.airline,
+          flight_no: raw.flight_no,
+          datetime: raw.datetime,
+        }
+      }
+
+      form.reset({ arrival: toUi(aRaw, 'arrival'), departure: toUi(dRaw, 'departure') })
     })
   }, [])
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
-      // Persist both legs
+      // Map UI form to backend FlightLegs
+      const toLeg = (ui: FlightLegUiForm): FlightLegForm => ({
+        direction: ui.direction,
+        terminal: ui.terminal_option === 'Other' ? (ui.terminal_other ?? '') : ui.terminal_option,
+        location: ui.location,
+        airline: ui.airline,
+        flight_no: ui.flight_no,
+        datetime: ui.datetime,
+      })
+      console.log('Submitting transport:', values)
       await upsertTransport([
-        { ...values.arrival, direction: 'arrival' },
-        { ...values.departure, direction: 'departure' },
+        toLeg({ ...values.arrival, direction: 'arrival' }),
+        toLeg({ ...values.departure, direction: 'departure' }),
       ])
       toast.success('Transportation details saved')
     } catch (e: any) {
@@ -77,25 +102,47 @@ export default function TransportPage() {
   }
 
   return (
-    <div className='space-y-4 px-4'>
+    <div className='space-y-4 px-10'>
+      <div className='flex items-center justify-between'>
+        <h1 className='text-xl font-semibold'>Transportation</h1>
+      </div>
       <Card>
-        <CardHeader>Transportation</CardHeader>
         <CardContent>
           <form id='transport-form' onSubmit={form.handleSubmit(onSubmit)}>
-            <div className='space-y-6'>
+            <div className='pt-4 space-y-6 pr-10'>
               <div>
                 <div className='font-medium mb-2'>Arrival</div>
                 <FieldGroup>
-                  <Controller
-                    name='arrival.terminal'
-                    control={form.control}
-                    render={({ field }) => (
-                      <div>
-                        <Label>Terminal/Airport</Label>
-                        <Input {...field} />
+                  <div>
+                    <Label>Terminal</Label>
+                    <Controller
+                      name='arrival.terminal_option'
+                      control={form.control}
+                      render={({ field }) => (
+                        <RadioGroup
+                          className='mt-2 grid grid-cols-2 gap-2'
+                          value={field.value}
+                          onValueChange={field.onChange}
+                        >
+                          {TERMINAL_OPTIONS.map((opt) => {
+                            const id = `arr-terminal-${opt}`
+                            return (
+                              <div key={id} className='flex items-center gap-2'>
+                                <RadioGroupItem id={id} value={opt} />
+                                <Label htmlFor={id} className='cursor-pointer'>{opt}</Label>
+                              </div>
+                            )
+                          })}
+                        </RadioGroup>
+                      )}
+                    />
+                    {form.watch('arrival.terminal_option') === 'Other' && (
+                      <div className='mt-2'>
+                        <Label>Specify terminal</Label>
+                        <Input {...form.register('arrival.terminal_other')} placeholder='Enter terminal' />
                       </div>
                     )}
-                  />
+                  </div>
                   <Controller
                     name='arrival.location'
                     control={form.control}
@@ -117,7 +164,7 @@ export default function TransportPage() {
                     )}
                   />
                   <Controller
-                    name='arrival.flightNo'
+                    name='arrival.flight_no'
                     control={form.control}
                     render={({ field }) => (
                       <div>
@@ -146,16 +193,36 @@ export default function TransportPage() {
               <div>
                 <div className='font-medium mb-2'>Departure</div>
                 <FieldGroup>
-                  <Controller
-                    name='departure.terminal'
-                    control={form.control}
-                    render={({ field }) => (
-                      <div>
-                        <Label>Terminal/Airport</Label>
-                        <Input {...field} />
+                  <div>
+                    <Label>Terminal</Label>
+                    <Controller
+                      name='departure.terminal_option'
+                      control={form.control}
+                      render={({ field }) => (
+                        <RadioGroup
+                          className='mt-2 grid grid-cols-2 gap-2'
+                          value={field.value}
+                          onValueChange={field.onChange}
+                        >
+                          {TERMINAL_OPTIONS.map((opt) => {
+                            const id = `dep-terminal-${opt}`
+                            return (
+                              <div key={id} className='flex items-center gap-2'>
+                                <RadioGroupItem id={id} value={opt} />
+                                <Label htmlFor={id} className='cursor-pointer'>{opt}</Label>
+                              </div>
+                            )
+                          })}
+                        </RadioGroup>
+                      )}
+                    />
+                    {form.watch('departure.terminal_option') === 'Other' && (
+                      <div className='mt-2'>
+                        <Label>Specify terminal</Label>
+                        <Input {...form.register('departure.terminal_other')} placeholder='Enter terminal' />
                       </div>
                     )}
-                  />
+                  </div>
                   <Controller
                     name='departure.location'
                     control={form.control}
@@ -177,7 +244,7 @@ export default function TransportPage() {
                     )}
                   />
                   <Controller
-                    name='departure.flightNo'
+                    name='departure.flight_no'
                     control={form.control}
                     render={({ field }) => (
                       <div>

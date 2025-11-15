@@ -32,28 +32,28 @@ const menuItems = [
         icon: Home,
         status: status.TIME_SENSITIVE,
         label: "Main",
-        href: "",
+        href: "/",
         visible: ["admin", "country", "volunteer", "jury"],
       },
       {
         icon: SquareChartGantt,
         status: status.TIME_SENSITIVE,
         label: "Admin",
-        href: "admin",
+        href: "/admin",
         visible: ["admin"],
       },
       {
         icon: Phone,
         status: status.TIME_SENSITIVE,
         label: "Contacts",
-        href: "contacts",
+        href: "/contacts",
         visible: ["admin", "country"],
       },
       {
         icon: Banknote,
         status: status.TIME_SENSITIVE,
         label: "Payments",
-        href: "payments",
+        href: "/payments",
         visible: ["admin", "country"],
       },
 
@@ -61,21 +61,21 @@ const menuItems = [
         icon: Users,
         status: status.TIME_SENSITIVE,
         label: "Teams",
-        href: "teams",
+        href: "/teams",
         visible: ["admin", "country"],
       },
       {
         icon: User,
         status: status.TIME_SENSITIVE,
         label: "Members",
-        href: "members",
+        href: "/members",
         visible: ["admin", "country"],
       },
       {
         icon: Plane,
         status: status.TIME_SENSITIVE,
         label: "Transportation",
-        href: "transport",
+        href: "/transport",
         visible: ["admin", "country", "volunteer", "jury"],
       },
       
@@ -124,7 +124,7 @@ export function AppSidebar() {
                       <span>{item.label}</span>
                       </div>
                     ) : (
-                      <Link href={item.href}>
+                      <Link href={item.href as any}>
                       <item.icon size={16} />
                       <span>{item.label}</span>
                       </Link>

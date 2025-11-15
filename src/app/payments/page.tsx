@@ -1,11 +1,9 @@
-
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import PaymentFlow from '@/components/paymentFlow'
 
 export default function PaymentsPage() {
   return (
-    <div className='space-y-4'>
-      
-      <Card><CardHeader>Payments</CardHeader><CardContent>Coming soon.</CardContent></Card>
+    <div className='space-y-6 px-10'>
+      <PaymentFlow />
     </div>
   )
 }

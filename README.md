@@ -1,7 +1,7 @@
-# Event Registration Web App (Next.js + Firebase)
-
-This scaffold integrates your functional spec and data model. UI is App Router based with a left sidebar, breadcrumb, and feature pages. Forms use react-hook-form with Zod schemas. Firebase integration is abstracted behind a service layer.
-
+# IOL 2025 Registration App
+## Structure
+- Frontend: Next.js, ShadCN UI, React Hook Form, Zod
+- Backend: Firebase Authentication, Firestore, Cloud Functions
 ## Quick start
 1. Create a Firebase project. Enable Authentication (Email/Password + Google), Firestore, and Functions.
 2. Copy `.env.local.example` to `.env.local` and set values.
@@ -147,5 +147,7 @@ Make sure your active Firebase project (`firebase use`) matches the project conf
 
 ## Unfinished features & todos
 - [ ] Verification steps for payments (e.g. email confirmation).
+
+- (Notes: I use resend for the email service in the original plan.)
 - [ ] Limit team/member counts based on selected plan.
 - [ ] Team limit of city tour and excursions.

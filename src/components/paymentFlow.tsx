@@ -29,9 +29,10 @@ import {
 import { Item, ItemContent, ItemDescription, ItemGroup, ItemHeader, ItemTitle } from "@/components/ui/item"
 import { calculatePricing, decideCountryStatus, decidePlan } from "@/lib/payment"
 import { useAuth } from "@/context/AuthProvider"
-import { saveRegistrationDetails } from "@/services/paymenApi"
+import { saveRegistrationDetails, submitPaymentConfirmation, loadPaymentState } from "@/services/paymenApi"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import Images from "next/image"
+import { toast } from "sonner"
 
 type PaymentMethodOption = "Online Payment Platform" | "Direct Bank Transfer"
 
@@ -58,8 +59,9 @@ export default function PaymentFlow() {
     },
   })
 
+  const watchedValues = regForm.watch()
   // Pricing preview for callout
-  const breakdown = useMemo(() => calculatePricing(regForm.getValues()), [regForm.watch()])
+  const breakdown = useMemo(() => calculatePricing(watchedValues), [watchedValues])
 
   // Step 2 form
   const [ack, setAck] = useState(false)
@@ -80,6 +82,30 @@ export default function PaymentFlow() {
     regForm.setValue("country_status", fixedCountryStatus)
   }, [fixedPlan, fixedCountryStatus, regForm])
 
+  // Load any existing payment state so user resumes from last step
+  useEffect(() => {
+    ;(async () => {
+      const state = await loadPaymentState()
+      if (!state) return
+
+      if (state.registration) {
+        const reg = state.registration as RegistrationDetailValues
+        regForm.reset(reg)
+        setSavedRegistration(reg)
+      }
+
+      if (state.confirmation) {
+        const conf = state.confirmation as PaymentConfirmationValues
+        confirmForm.reset(conf)
+        setSavedConfirmation(conf)
+      }
+
+      if (typeof state.step === "number") {
+        setStep(state.step as PaymentStep)
+      }
+    })()
+  }, [regForm, confirmForm])
+
   async function onSaveRegistration() {
     const values = regForm.getValues()
     // validate before showing dialog confirm
@@ -91,16 +117,47 @@ export default function PaymentFlow() {
   const [confirmOpen, setConfirmOpen] = useState(false)
 
   async function confirmAndUpload() {
-    const values = regForm.getValues()
-    await saveRegistrationDetails(values)
-    setSavedRegistration(values)
-    setConfirmOpen(false)
-    setStep(PaymentStep.PaymentConfirmation)
+    try {
+      const values = regForm.getValues()
+      const totals = breakdown
+      await saveRegistrationDetails(
+        values,
+        {
+          subtotal: totals.subtotal,
+          processingFeeOnline: totals.processingFeeOnline,
+          totalOnline: totals.totalOnline,
+          totalBank: totals.totalBank,
+        },
+        PaymentStep.PaymentConfirmation,
+      )
+      setSavedRegistration(values)
+      setConfirmOpen(false)
+      setStep(PaymentStep.PaymentConfirmation)
+      toast.success("Registration details saved")
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to save registration details")
+    }
   }
 
-  function onSubmitConfirmation(values: PaymentConfirmationValues) {
-    setSavedConfirmation(values)
-    setStep(PaymentStep.WaitingForVerification)
+  async function onSubmitConfirmation(values: PaymentConfirmationValues) {
+    try {
+      const totals = breakdown
+      await submitPaymentConfirmation(
+        values,
+        {
+          subtotal: totals.subtotal,
+          processingFeeOnline: totals.processingFeeOnline,
+          totalOnline: totals.totalOnline,
+          totalBank: totals.totalBank,
+        },
+        PaymentStep.WaitingForVerification,
+      )
+      setSavedConfirmation(values)
+      setStep(PaymentStep.WaitingForVerification)
+      toast.success("Payment submitted")
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to submit payment")
+    }
   }
 
   function finishAll() {
@@ -496,8 +553,30 @@ export default function PaymentFlow() {
                     </Card>
                   )}
 
-                  <div className="flex gap-3">
-                    <Button type="submit" disabled={!method}>Submit payment</Button>
+                  <div className="space-y-3">
+                    {/* Show totals with and without processing fee */}
+                    <div className="text-sm">
+                      <div className="flex justify-between">
+                        <span>Subtotal (without processing fee)</span>
+                        <span>${breakdown.subtotal}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Processing fee (online only)</span>
+                        <span>${breakdown.processingFeeOnline}</span>
+                      </div>
+                      <div className="flex justify-between font-medium">
+                        <span>Total (online)</span>
+                        <span>${breakdown.totalOnline}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Total (bank transfer)</span>
+                        <span>${breakdown.totalBank}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-3">
+                      <Button type="submit" disabled={!method}>Submit payment</Button>
+                    </div>
                   </div>
                 </form>
               </CardContent>
@@ -518,54 +597,62 @@ export default function PaymentFlow() {
                 sent to your email account. We will verify your payment shortly.
               </div>
 
-              <ItemGroup>
-                <Item variant="outline">
+                <ItemGroup>
+                <Item variant="outline" className="overflow-visible">
                   <ItemHeader>
-                    <ItemTitle>Transaction details</ItemTitle>
+                  <ItemTitle>Transaction details</ItemTitle>
                   </ItemHeader>
                   <ItemContent>
-                    <ItemDescription>
-                      {savedRegistration && savedConfirmation ? (
-                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                          <div>
-                            <span className="text-muted-foreground">Payment method:</span> {savedConfirmation.payment_method}
-                          </div>
-                          {savedConfirmation.order_number && (
-                            <div>
-                              <span className="text-muted-foreground">Order number:</span> {savedConfirmation.order_number}
-                            </div>
-                          )}
-                          {savedConfirmation.transaction_number && (
-                            <div>
-                              <span className="text-muted-foreground">Transaction number:</span> {savedConfirmation.transaction_number}
-                            </div>
-                          )}
-                          <div>
-                            <span className="text-muted-foreground">Need invoice:</span> {savedConfirmation.need_invoice ? "Yes" : "No"}
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Plan:</span> {savedRegistration.plan}
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Country status:</span> {savedRegistration.country_status}
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Teams:</span> {savedRegistration.number_of_teams}
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Observers:</span> {savedRegistration.additional_observers}
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Single room:</span> {savedRegistration.single_room_requests}
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="text-muted-foreground">No transaction details yet. This is a preview of the confirmation step.</div>
+                    {savedRegistration && savedConfirmation ? (
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                      <div className="break-words">
+                      <span className="text-muted-foreground">Payment method:</span>{" "}
+                      {savedConfirmation.payment_method}
+                      </div>
+                      {savedConfirmation.order_number && (
+                      <div className="break-words">
+                        <span className="text-muted-foreground">Order number:</span>{" "}
+                        {savedConfirmation.order_number}
+                      </div>
                       )}
-                    </ItemDescription>
+                      {savedConfirmation.transaction_number && (
+                      <div className="break-words">
+                        <span className="text-muted-foreground">Transaction number:</span>{" "}
+                        {savedConfirmation.transaction_number}
+                      </div>
+                      )}
+                      <div className="break-words">
+                      <span className="text-muted-foreground">Need invoice:</span>{" "}
+                      {savedConfirmation.need_invoice ? "Yes" : "No"}
+                      </div>
+                      <div className="break-words">
+                      <span className="text-muted-foreground">Plan:</span> {savedRegistration.plan}
+                      </div>
+                      <div className="break-words">
+                      <span className="text-muted-foreground">Country status:</span>{" "}
+                      {savedRegistration.country_status}
+                      </div>
+                      <div className="break-words">
+                      <span className="text-muted-foreground">Teams:</span>{" "}
+                      {savedRegistration.number_of_teams}
+                      </div>
+                      <div className="break-words">
+                      <span className="text-muted-foreground">Observers:</span>{" "}
+                      {savedRegistration.additional_observers}
+                      </div>
+                      <div className="break-words">
+                      <span className="text-muted-foreground">Single room:</span>{" "}
+                      {savedRegistration.single_room_requests}
+                      </div>
+                    </div>
+                    ) : (
+                    <div className="text-muted-foreground">
+                      No transaction details yet. This is a preview of the confirmation step.
+                    </div>
+                    )}
                   </ItemContent>
                 </Item>
-              </ItemGroup>
+                </ItemGroup>
 
               <div className="flex gap-3">
                 <Button onClick={finishAll}>Finish</Button>

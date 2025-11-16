@@ -11,8 +11,8 @@ import { useAuth } from '@/context/AuthProvider'
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const router = useRouter()
-  const { user, loading } = {user: "x", loading: false} as { user: any; loading: boolean }
-  // const { user, loading } = useAuth() as { user: any; loading: boolean }
+  // const { user, loading } = {user: "x", loading: false} as { user: any; loading: boolean }
+  const { user, loading } = useAuth() as { user: any; loading: boolean }
 
   useEffect(() => {
     if (!loading && !user) router.replace('/signin')

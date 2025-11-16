@@ -52,24 +52,21 @@ export default function MembersPage() {
       'Observer': [],
     }
     for (const m of members) {
-      // We store role text in notes or another field in the stub Member? Until backend exists,
-      // we attempt to infer by a loose convention: store role under notes as `role:...` OR assume unknown -> Observer.
-      // If wired properly, replace with `m.role`.
-      const roleFromNotes = typeof m.notes === 'string' && m.notes.startsWith('role:') ? (m.notes.slice(5) as RoleBucket) : undefined
-      const role = (roleFromNotes && ROLE_LABELS.includes(roleFromNotes)) ? roleFromNotes : ('Observer' as RoleBucket)
-      buckets[role].push(m)
+      const role = (m.role as RoleBucket) ?? ('Observer' as RoleBucket)
+      const bucket: RoleBucket = ROLE_LABELS.includes(role) ? role : 'Observer'
+      buckets[bucket].push(m)
     }
-    // Sort leaders and contestants by team name then by fullName
+    // Sort leaders and contestants by team name then by display_name
     const byTeamThenName = (a: Member, b: Member) => {
-      const an = a.teamId ? teamNameById.get(a.teamId) ?? '' : ''
-      const bn = b.teamId ? teamNameById.get(b.teamId) ?? '' : ''
+      const an = a.team ? teamNameById.get(a.team) ?? '' : ''
+      const bn = b.team ? teamNameById.get(b.team) ?? '' : ''
       if (an !== bn) return an.localeCompare(bn)
-      return (a.fullName ?? '').localeCompare(b.fullName ?? '')
+      return (a.display_name ?? '').localeCompare(b.display_name ?? '')
     }
     buckets['Team Leader'].sort(byTeamThenName)
     buckets['Team Contestant'].sort(byTeamThenName)
     // Observers sorted by name
-    buckets['Observer'].sort((a, b) => (a.fullName ?? '').localeCompare(b.fullName ?? ''))
+    buckets['Observer'].sort((a, b) => (a.display_name ?? '').localeCompare(b.display_name ?? ''))
     return buckets
   }, [members, teamNameById])
 
@@ -126,10 +123,10 @@ export default function MembersPage() {
                       </TableRow>
                     ) : (
                       grouped[role].map((m) => (
-                        <TableRow key={m.id ?? m.fullName}>
-                          <TableCell className="font-medium">{m.fullName ?? '-'}</TableCell>
+                        <TableRow key={m.id ?? m.display_name}>
+                          <TableCell className="font-medium">{m.display_name ?? '-'}</TableCell>
                           <TableCell>
-                            {role === 'Observer' ? '-' : (m.teamId ? (teamNameById.get(m.teamId) ?? '-') : '-')}
+                            {role === 'Observer' ? '-' : (m.team ? (teamNameById.get(m.team) ?? '-') : '-')}
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
@@ -148,7 +145,7 @@ export default function MembersPage() {
                                   <FieldGroup>
                                     <div>
                                       <div className="text-sm">Name</div>
-                                      <div className="text-sm text-muted-foreground">{m.fullName}</div>
+                                      <div className="text-sm text-muted-foreground">{m.display_name}</div>
                                     </div>
                                   </FieldGroup>
                                   <DialogFooter>

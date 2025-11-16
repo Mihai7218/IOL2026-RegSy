@@ -29,42 +29,30 @@ export default function ContactsPage() {
   })
 
   useEffect(() => {
-    fetchContacts().then(cs => {
-      const p = cs.find(c => c.isPrimary)
-      const s = cs.find(c => !c.isPrimary)
+    fetchContacts().then((c) => {
+      if (!c) return
       form.reset({
         primary: {
-          name: p?.name ?? '',
-          email: p?.email ?? '',
-          phone: p?.phone ?? '',
-          whatsapp: p?.whatsapp ?? '',
+          name: c.primary.name ?? '',
+          email: c.primary.email ?? '',
+          phone: c.primary.phone ?? '',
+          whatsapp: c.primary.whatsapp ?? '',
         },
         secondary: {
-          name: s?.name ?? '',
-          email: s?.email ?? '',
-          phone: s?.phone ?? '',
-          whatsapp: s?.whatsapp ?? '',
+          name: c.secondary?.name ?? '',
+          email: (c.secondary?.email as string | undefined) ?? '',
+          phone: c.secondary?.phone ?? '',
+          whatsapp: c.secondary?.whatsapp ?? '',
         },
       })
     })
+    // `form` is stable from `useForm`, safe to omit from deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   async function onSubmit(data: z.infer<typeof contactSchema>) {
     try {
-      const contacts = [] as Array<{
-        name: string; email: string; phone: string; whatsapp?: string; isPrimary?: boolean
-      }>
-
-      // Always include primary
-      contacts.push({
-        name: data.primary.name.trim(),
-        email: data.primary.email.trim(),
-        phone: (data.primary.phone ?? '').trim(),
-        whatsapp: (data.primary.whatsapp ?? '').trim() || undefined,
-        isPrimary: true,
-      })
-
-      // Include secondary only if at least one field is provided
+      // Only include secondary if at least one field is provided
       const hasSecondary = [
         data.secondary?.name,
         data.secondary?.email,
@@ -72,17 +60,27 @@ export default function ContactsPage() {
         data.secondary?.whatsapp,
       ].some(v => (v ?? '').toString().trim() !== '')
 
-      if (hasSecondary && data.secondary) {
-        contacts.push({
-          name: (data.secondary.name ?? '').trim(),
-          email: (data.secondary.email ?? '').trim(),
-          phone: (data.secondary.phone ?? '').trim(),
-          whatsapp: (data.secondary.whatsapp ?? '').trim() || undefined,
-          isPrimary: false,
-        })
+      const payload: ContactForm = {
+        primary: {
+          name: data.primary.name.trim(),
+          email: data.primary.email.trim(),
+          phone: (data.primary.phone ?? '').trim(),
+          // store empty string as empty string (never undefined) to avoid Firestore error
+          whatsapp: (data.primary.whatsapp ?? '').trim(),
+        },
+        // Only include secondary if at least one field is provided; when included, normalise
+        // empty strings to empty string so we never send `undefined` into Firestore.
+        secondary: hasSecondary && data.secondary
+          ? {
+              name: (data.secondary.name ?? ' ').trim(),
+              email: (data.secondary.email ?? ' ').trim(),
+              phone: (data.secondary.phone ?? ' ').trim(),
+              whatsapp: (data.secondary.whatsapp ?? ' ').trim(),
+            }
+          : undefined,
       }
-      console.log('Submitting contacts:', contacts)
-      await upsertContacts(contacts as any)
+
+      await upsertContacts(payload as any)
       toast.success('Contacts saved')
     } catch (e: any) {
       toast.error(e?.message ?? 'Failed to save contacts')

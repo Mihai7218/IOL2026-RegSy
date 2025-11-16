@@ -11,12 +11,11 @@ import {
 import {
   doc,
   getDoc,
-  setDoc,
   serverTimestamp,
+  runTransaction,
 } from "firebase/firestore";
-import { httpsCallable } from "firebase/functions";
 
-import { auth, provider, db, functions } from "@/lib/firebase";
+import { auth, provider, db } from "@/lib/firebase";
 
 export type AuthErrorCode =
   | "InvalidInvitation"
@@ -34,13 +33,8 @@ export type AuthResult<T> =
   | { ok: false; code: AuthErrorCode; message: string };
 
 export type CountryInfo = {
-  countryName: string;
-  countryKey: string;
-};
-
-type InviteResponse = {
-  countryName: string;
-  countryKey: string;
+  country_code: string;
+  country_name: string;
 };
 
 function fail<T>(code: AuthErrorCode, message: string): AuthResult<T> {
@@ -80,75 +74,32 @@ function mapAuthError(error: unknown): { code: AuthErrorCode; message: string } 
     }
   }
 
-  // Callable Functions / invitation errors: "functions/..."
-  if (anyErr.code.startsWith("functions/")) {
-    switch (anyErr.code) {
-      case "functions/not-found":
-        return {
-          code: "InvalidInvitation",
-          message: "Invitation code is invalid.",
-        };
-      case "functions/already-exists":
-        return {
-          code: "InvitationAlreadyUsed",
-          message: "Invitation code was already used.",
-        };
-      case "functions/failed-precondition":
-        return {
-          code: "InvitationExpired",
-          message: "Invitation code has expired.",
-        };
-      default:
-        return { code: "Unknown", message };
-    }
-  }
-
   return { code: "Unknown", message };
 }
 
-async function ensureUserDocument(
-  user: User,
-  extra?: { name?: string; role?: string }
-): Promise<void> {
-  const ref = doc(db, "users", user.uid);
-  const snap = await getDoc(ref);
-
-  const existing = snap.exists() ? (snap.data() as any) : {};
-  const name = extra?.name ?? user.displayName ?? existing.name ?? "";
-  const role = extra?.role ?? existing.role ?? "country";
-
-  const payload = {
-    name,
-    email: user.email ?? null,
-    role,
-    updatedAt: serverTimestamp(),
-    ...(snap.exists()
-      ? {}
-      : {
-          createdAt: serverTimestamp(),
-        }),
-  };
-
-  await setDoc(ref, payload, { merge: true });
-
-  if (!user.displayName && name) {
-    await updateProfile(user, { displayName: name });
-  }
-}
-
-async function redeemInvitation(code: string): Promise<CountryInfo> {
-  const trimmed = code.trim();
+async function redeemInvitation(code: string): Promise<{ codeId: string; country: CountryInfo }> {
+  const trimmed = code.trim().toUpperCase();
   if (!trimmed) {
     throw new Error("Invitation code is required");
   }
 
-  const callable = httpsCallable(functions, "redeemInvite");
-  const res = await callable({ code: trimmed });
-  const data = res.data as InviteResponse;
+  const codeRef = doc(db, "invitationCodes", trimmed);
+  const snap = await getDoc(codeRef);
+  if (!snap.exists()) {
+    throw new Error("Invalid invitation code.");
+  }
+
+  const data = snap.data() as any;
+  if (data.used) {
+    throw new Error("Invitation code already used.");
+  }
 
   return {
-    countryName: data.countryName,
-    countryKey: data.countryKey,
+    codeId: trimmed,
+    country: {
+      country_code: data.country_code as string,
+      country_name: data.country_name as string,
+    },
   };
 }
 
@@ -162,8 +113,6 @@ export async function loginWithEmail(
     const cred = await signInWithEmailAndPassword(auth, email, password);
     const user = cred.user;
 
-    await ensureUserDocument(user);
-
     return { ok: true, data: user };
   } catch (error) {
     const mapped = mapAuthError(error);
@@ -175,8 +124,6 @@ export async function loginWithGoogle(): Promise<AuthResult<User>> {
   try {
     const cred = await signInWithPopup(auth, provider as GoogleAuthProvider);
     const user = cred.user;
-
-    await ensureUserDocument(user);
 
     return { ok: true, data: user };
   } catch (error) {
@@ -193,15 +140,56 @@ export async function registerWithEmail(
   let user: User | null = null;
 
   try {
+    // 1. Validate invitation code first (without marking it used yet)
+    const { codeId, country } = await redeemInvitation(invitationCode);
+
+    // 2. Create Auth user
     const cred = await createUserWithEmailAndPassword(auth, email, password);
     user = cred.user;
+    const authUid = user.uid;
 
-    const country = await redeemInvitation(invitationCode);
+    const codeRef = doc(db, "invitationCodes", codeId);
+    const countryRef = doc(db, "countries", authUid);
 
-    await ensureUserDocument(user, {
-      name: country.countryName,
-      role: "country",
+    // 3. Atomically mark code as used + create country document
+    await runTransaction(db, async (tx) => {
+      const codeSnap = await tx.get(codeRef);
+      if (!codeSnap.exists()) {
+        throw new Error("Invalid invitation code.");
+      }
+      const codeData = codeSnap.data() as any;
+      if (codeData.used && codeData.usedBy !== authUid) {
+        throw new Error("Invitation code already used.");
+      }
+
+      tx.set(
+        codeRef,
+        {
+          used: true,
+          used_by: authUid,
+          used_at: serverTimestamp(),
+        },
+        { merge: true }
+      );
+
+      tx.set(
+        countryRef,
+        {
+          country_code: country.country_code,
+          country_name: country.country_name,
+          status: "registered",
+          teamCount: 0,
+          memberCount: 0,
+          created_at: serverTimestamp(),
+          updated_at: serverTimestamp(),
+        },
+        { merge: true }
+      );
     });
+
+    if (!user.displayName && country.country_name) {
+      await updateProfile(user, { displayName: country.country_name });
+    }
 
     return { ok: true, data: { user, country } };
   } catch (error) {
@@ -223,25 +211,60 @@ export async function registerWithGoogle(
   let user: User | null = null;
 
   try {
+    // 1. Validate invitation code
+    const { codeId, country } = await redeemInvitation(invitationCode);
+
+    // 2. Sign in with Google (creates account if needed)
     const cred = await signInWithPopup(auth, provider as GoogleAuthProvider);
     user = cred.user;
+    const authUid = user.uid;
 
-    const country = await redeemInvitation(invitationCode);
+    const codeRef = doc(db, "invitationCodes", codeId);
+    const countryRef = doc(db, "countries", authUid);
 
-    await ensureUserDocument(user, {
-      name: country.countryName,
-      role: "country",
+    // 3. Same transaction as email flow
+    await runTransaction(db, async (tx) => {
+      const codeSnap = await tx.get(codeRef);
+      if (!codeSnap.exists()) {
+        throw new Error("Invalid invitation code.");
+      }
+      const codeData = codeSnap.data() as any;
+      if (codeData.used && codeData.usedBy !== authUid) {
+        throw new Error("Invitation code already used.");
+      }
+
+      tx.set(
+        codeRef,
+        {
+          used: true,
+          used_by: authUid,
+          used_at: serverTimestamp(),
+        },
+        { merge: true }
+      );
+
+      tx.set(
+        countryRef,
+        {
+          country_code: country.country_code,
+          country_name: country.country_name,
+          status: "registered",
+          teamCount: 0,
+          memberCount: 0,
+          created_at: serverTimestamp(),
+          updated_at: serverTimestamp(),
+        },
+        { merge: true }
+      );
     });
+
+    if (!user.displayName && country.country_name) {
+      await updateProfile(user, { displayName: country.country_name });
+    }
 
     return { ok: true, data: { user, country } };
   } catch (error) {
-    if (user) {
-      try {
-        await deleteUser(user);
-      } catch {
-        // ignore
-      }
-    }
+    // For Google sign-in we don't attempt cleanup; user may already exist
     const mapped = mapAuthError(error);
     return fail(mapped.code, mapped.message);
   }

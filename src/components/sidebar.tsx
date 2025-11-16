@@ -1,7 +1,6 @@
 "use client"
 import { Home, User, Users, Plane, Banknote, LogOut, Phone, SquareChartGantt  } from "lucide-react"
 import Image from "next/image";
-// import { useUserStore } from "@/lib/stores"
 import Link from "next/link";
 import {
   Sidebar,
@@ -17,13 +16,23 @@ import {
 } from "@/components/ui/sidebar"
 import { Skeleton } from "./ui/skeleton";
 import { signOut } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { doc, onSnapshot } from "firebase/firestore";
+import { useEffect, useMemo, useState } from "react";
+import { useAuth } from "@/context/AuthProvider";
+import { isAdmin } from "@/lib/roles";
 
 enum status {
   TIME_SENSITIVE = "Time Sensitive",
   NOT_TIME_SENSITIVE = "Not Time Sensitive",
+}
+ 
+type SidebarUser = {
+  name: string
+  email: string
+  role: string
 }
  
 // Menu items.
@@ -82,9 +91,53 @@ const menuItems = [
   ];
  
 export function AppSidebar() {
-
-  const { currentUser, isLoading } = { currentUser: { name: "John Doe", email: "john.doe@example.com", role: "admin" }, isLoading: false };
+  const { user, claims, loading: authLoading } = useAuth()
+  const [currentUser, setCurrentUser] = useState<SidebarUser | null>(null)
+  const [profileLoading, setProfileLoading] = useState(false)
   const router = useRouter();
+
+  const fallbackName = useMemo(() => user?.displayName || user?.email || "User", [user?.displayName, user?.email])
+  const email = user?.email || ""
+  const userUid = user?.uid ?? null
+  const role = useMemo(() => (isAdmin(claims) ? "admin" : userUid ? "country" : "guest"), [claims, userUid])
+
+  useEffect(() => {
+    if (!userUid) {
+      setCurrentUser(null)
+      setProfileLoading(false)
+      return
+    }
+
+    if (role === "admin") {
+      setCurrentUser({ name: fallbackName, email, role: "admin" })
+      setProfileLoading(false)
+      return
+    }
+
+    setProfileLoading(true)
+    const countryRef = doc(db, "countries", userUid)
+    const unsub = onSnapshot(
+      countryRef,
+      (snap) => {
+        const data = snap.data() as any
+        const name = typeof data?.country_name === "string" ? data.country_name : fallbackName
+        setCurrentUser({ name, email, role: "country" })
+        setProfileLoading(false)
+      },
+      (error) => {
+        console.error("Failed to load country profile for sidebar", error)
+        setCurrentUser({ name: fallbackName, email, role: "country" })
+        setProfileLoading(false)
+      },
+    )
+
+    return () => {
+      setProfileLoading(false)
+      unsub()
+    }
+  }, [userUid, role, fallbackName, email])
+
+  const isLoading = authLoading || profileLoading
 
 
   return (
@@ -115,7 +168,7 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => (
-                item.visible.includes(currentUser?.role) && (
+                currentUser && item.visible.includes(currentUser.role) && (
                 <SidebarMenuItem key={item.href}>
                   <SidebarMenuButton asChild>
                     {item.status === status.NOT_TIME_SENSITIVE && currentUser?.role != "admin" ? (

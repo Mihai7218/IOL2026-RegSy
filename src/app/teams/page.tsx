@@ -44,9 +44,9 @@ export default function TeamsPage() {
       setTeams(t)
       const map: MemberMap = {}
       for (const mem of m) {
-        if (!mem.teamId) continue
-        map[mem.teamId] = map[mem.teamId] || []
-        map[mem.teamId].push(mem)
+        if (!mem.team) continue
+        map[mem.team] = map[mem.team] || []
+        map[mem.team].push(mem)
       }
       setMembersByTeam(map)
     } catch (e: any) {
@@ -117,7 +117,7 @@ export default function TeamsPage() {
         <div className='space-y-4'>
           <Card>
             <CardHeader>No teams yet</CardHeader>
-            <CardContent>Click "Create team" to add your first team.</CardContent>
+            <CardContent>Click &ldquo;Create team&rdquo; to add your first team.</CardContent>
           </Card>
 
           {/* Sample preview card */}
@@ -185,8 +185,11 @@ export default function TeamsPage() {
       <div className='grid grid-cols-1 gap-4'>
         {teams.map((team) => {
           const tMembers = membersByTeam[team.id ?? ''] || []
-          const leader = tMembers[0]
-          const contestants = tMembers.slice(1)
+
+          // Classify members by explicit role from the database
+          const leader = tMembers.find((m) => m.role === 'Team Leader')
+          const contestants = tMembers.filter((m) => m.role === 'Team Contestant')
+          const observers = tMembers.filter((m) => m.role === 'Observer')
           return (
             <Card key={team.id ?? team.team_name}>
               <CardHeader>
@@ -213,12 +216,12 @@ export default function TeamsPage() {
                       <ItemMedia variant='icon'>
                         <Avatar>
                           <AvatarImage src="/avatars/01.png" />
-                          <AvatarFallback>{getCapital('Alice Leader')}</AvatarFallback>
+                          <AvatarFallback>{getCapital(leader.display_name)}</AvatarFallback>
                         </Avatar>
                       </ItemMedia>
                       <ItemContent>
                         <ItemHeader>
-                          <ItemTitle>{leader.fullName}</ItemTitle>
+                          <ItemTitle>{leader.display_name}</ItemTitle>
                         </ItemHeader>
                       </ItemContent>
                     </Item>
@@ -233,16 +236,16 @@ export default function TeamsPage() {
                   {contestants.length ? (
                     <div className='flex flex-col gap-2'>
                       {contestants.map((m) => (
-                        <Item key={m.id ?? m.fullName} variant='muted'>
+                        <Item key={m.id ?? m.display_name} variant='muted'>
                           <ItemMedia variant='icon'>
                             <Avatar>
                               <AvatarImage src="/avatars/02.png" />
-                              <AvatarFallback>{getCapital(m.fullName)}</AvatarFallback>
+                              <AvatarFallback>{getCapital(m.display_name)}</AvatarFallback>
                             </Avatar>
                           </ItemMedia>
                           <ItemContent>
                             <ItemHeader>
-                              <ItemTitle>{m.fullName}</ItemTitle>
+                              <ItemTitle>{m.display_name}</ItemTitle>
                             </ItemHeader>
                           </ItemContent>
                         </Item>
@@ -252,6 +255,30 @@ export default function TeamsPage() {
                     <div className='text-sm text-muted-foreground'>No contestants yet</div>
                   )}
                 </div>
+
+                {observers.length > 0 && (
+                  <div className='pt-2'>
+                    <div className='text-sm font-medium mb-2'>Observers</div>
+                    <Separator className='mb-2' />
+                    <div className='flex flex-col gap-2'>
+                      {observers.map((m) => (
+                        <Item key={m.id ?? m.display_name} variant='muted'>
+                          <ItemMedia variant='icon'>
+                            <Avatar>
+                              <AvatarImage src="/avatars/02.png" />
+                              <AvatarFallback>{getCapital(m.display_name)}</AvatarFallback>
+                            </Avatar>
+                          </ItemMedia>
+                          <ItemContent>
+                            <ItemHeader>
+                              <ItemTitle>{m.display_name}</ItemTitle>
+                            </ItemHeader>
+                          </ItemContent>
+                        </Item>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )
@@ -297,7 +324,7 @@ export default function TeamsPage() {
           <DialogHeader>
             <DialogTitle>Delete team</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{deleteTarget?.team_name}"? This action cannot be undone.
+              Are you sure you want to delete &ldquo;{deleteTarget?.team_name}&rdquo;? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

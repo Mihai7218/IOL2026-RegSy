@@ -11,13 +11,13 @@ import { createInviteCode } from '@/services/firebaseApi'
 
 export default function InvitesPage() {
   const { claims } = useAuth()
-  if (!isAdmin(claims)) return <p>Admin only.</p>
+  if (!isAdmin(claims)) return <p className='px-10 py-8 text-sm text-muted-foreground'>Admin only.</p>
   const [countryKey, setCountryKey] = useState('')
   const [countryName, setCountryName] = useState('')
-  const [result, setResult] = useState<{code:string;expiresAt:string}|null>(null)
+  const [result, setResult] = useState<{ code: string; created_at: string } | null>(null)
 
   const create = async () => {
-    const r = await createInviteCode(countryKey, countryName)
+  const r = await createInviteCode(countryKey, countryName)
     setResult(r)
   }
 
@@ -33,7 +33,12 @@ export default function InvitesPage() {
             <div><Label>Country Name</Label><Input value={countryName} onChange={e => setCountryName(e.target.value)} /></div>
           </div>
           <Button type='button' onClick={create}>Create</Button>
-          {result && <div className='text-sm'>Code: <code>{result.code}</code> Expires: {new Date(result.expiresAt).toLocaleString()}</div>}
+          {result && (
+            <div className='text-sm'>
+              Code: <code>{result.code}</code> Created:{' '}
+              {new Date(result.created_at).toLocaleString()}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

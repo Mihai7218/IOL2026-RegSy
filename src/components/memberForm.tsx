@@ -14,6 +14,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { fetchTeams, type Team } from '@/services/firebaseApi'
 import { Checkbox } from '@/components/ui/checkbox'
+import { languages } from '@/lib/languages'
 
 export type MemberFormValues = MemberSchemaForm & { id?: string }
 
@@ -255,16 +256,27 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
       <div className="space-y-3">
         <div className="text-base font-semibold">Contest Information</div>
         <FieldGroup>
-          <Controller
-            name="indiv_language"
-            control={form.control}
-            render={({ field }) => (
-              <div>
-                <Label>Preferred language (optional)</Label>
-                <Input placeholder="Enter language" {...field} />
-              </div>
-            )}
-          />
+           <Controller
+              name="indiv_language"
+              control={form.control}
+              render={({ field }) => (
+                <div>
+                  <Label>Contest language</Label>
+                  <Select value={field.value || undefined} onValueChange={field.onChange}>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Select language" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {languages.map((l) => (
+                        <SelectItem key={l.code} value={l.name}>
+                          {l.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            />
           <Controller
             name="indiv_contest_req"
             control={form.control}

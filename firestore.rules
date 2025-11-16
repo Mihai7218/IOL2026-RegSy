@@ -1,0 +1,60 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Admin if there is a doc /admins/{authUid}
+    function isAdmin() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    // The owner of a country is the user whose authUid == document id
+    function isCountryOwner(countryAuthUid) {
+      return isSignedIn() && request.auth.uid == countryAuthUid;
+    }
+
+    // /countries/{authUid}
+    match /countries/{authUid} {
+      // Country owner can only access their own doc; admin can access all
+      allow read, write: if isAdmin() || isCountryOwner(authUid);
+
+      // /countries/{authUid}/teams/{teamId}
+      match /teams/{teamId} {
+        allow read, write: if isAdmin() || isCountryOwner(authUid);
+      }
+
+      // /countries/{authUid}/members/{memberId}
+      match /members/{memberId} {
+        allow read, write: if isAdmin() || isCountryOwner(authUid);
+      }
+    }
+
+    // /invitationCodes/{code}
+    match /invitationCodes/{code} {
+      // Anyone can read a code to validate it on the registration form
+      allow get: if true;
+
+      // Only admins can create/delete codes
+      allow create, delete: if isAdmin();
+
+      // Only logged-in users can mark a code as used; idempotent for same user
+      allow update: if isSignedIn() && (
+        // from unused to used
+        resource.data.used == false ||
+        // or same user writing again (idempotent)
+        (resource.data.used == true &&
+         resource.data.usedBy == request.auth.uid)
+      );
+    }
+
+    // /admins/{authUid}
+    match /admins/{authUid} {
+      // Only admins manage admin list
+      allow read, write: if isAdmin();
+    }
+  }
+}

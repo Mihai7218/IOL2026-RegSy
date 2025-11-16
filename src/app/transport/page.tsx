@@ -77,6 +77,8 @@ export default function TransportPage() {
 
       form.reset({ arrival: toUi(aRaw, 'arrival'), departure: toUi(dRaw, 'departure') })
     })
+    // `form` is stable from `useForm`, safe to omit from deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   async function onSubmit(values: z.infer<typeof formSchema>) {

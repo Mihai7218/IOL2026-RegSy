@@ -7,19 +7,13 @@ import { Card, CardContent } from '@/components/ui/card'
 import { MemberForm, type MemberFormValues } from '@/components/memberForm'
 import { fetchMembers, upsertMember, type Member } from '@/services/firebaseApi'
 
-function splitName(full?: string) {
-  const s = (full ?? '').trim()
-  if (!s) return { given_name: '', middle_name: '', last_name: '', display_name: '', preferred_name: '' }
-  const parts = s.split(/\s+/)
-  const given_name = parts[0] ?? ''
-  const last_name = parts.length > 1 ? parts[parts.length - 1] : ''
-  const middle = parts.slice(1, -1)
+function splitName(m: Member) {
   return {
-    given_name,
-    middle_name: middle.join(' '),
-    last_name,
-    display_name: s,
-    preferred_name: given_name,
+    given_name: m.given_name ?? '',
+    middle_name: m.middle_name ?? '',
+    last_name: m.last_name ?? '',
+    display_name: m.display_name ?? '',
+    preferred_name: m.preferred_name ?? (m.given_name ?? ''),
   }
 }
 
@@ -41,25 +35,37 @@ export default function EditMemberPage() {
 
   const initialValues: Partial<MemberFormValues> | undefined = useMemo(() => {
     if (!member) return undefined
-    const roleFromNotes = typeof member.notes === 'string' && member.notes.startsWith('role:') ? (member.notes.slice(5)) : 'Observer'
-    const name = splitName(member.fullName)
+    const name = splitName(member)
     return {
       id: member.id,
-      role: (roleFromNotes as any) ?? 'Observer',
-      team: member.teamId ?? '',
+      role: member.role as any,
+      team: member.team ?? '',
       gender: member.gender ?? '',
       ...name,
     }
   }, [member])
 
   async function handleSubmit(values: MemberFormValues) {
-    const fullName = [values.given_name, values.middle_name, values.last_name].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim()
     const m: Member = {
       id: member?.id,
-      fullName,
-      teamId: values.role === 'Observer' ? '' : (values.team || ''),
-      gender: values.gender === 'Other' ? (values.other_gender || 'Other') : values.gender,
-      notes: `role:${values.role}`,
+      role: values.role,
+      team: values.role === 'Observer' ? '' : (values.team || ''),
+      given_name: values.given_name,
+      middle_name: values.middle_name ?? '',
+      last_name: values.last_name,
+      display_name: [values.given_name, values.middle_name, values.last_name].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim(),
+      preferred_name: values.preferred_name,
+      gender: values.gender,
+      other_gender: values.other_gender ?? '',
+      date_of_birth: values.date_of_birth,
+      tshirt_size: values.tshirt_size,
+      indiv_language: values.indiv_language ?? '',
+      indiv_contest_req: values.indiv_contest_req ?? '',
+      passport_number: values.passport_number ?? '',
+      issue_date: values.issue_date ?? '',
+      expiry_date: values.expiry_date ?? '',
+      food_req: values.food_req ?? [],
+      other_food_req: values.other_food_req ?? '',
     }
     await upsertMember(m)
     router.push('/members' as Route)

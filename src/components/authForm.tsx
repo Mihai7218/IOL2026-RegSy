@@ -65,9 +65,8 @@ export function AuthForm() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Event Portal</CardTitle>
+        <CardTitle>Welcome Back, </CardTitle>
         <CardDescription>
-          Sign in to manage your country, or register with an invitation code.
         </CardDescription>
       </CardHeader>
 
@@ -214,7 +213,7 @@ function RegisterPanel({ onSuccess }: RegisterPanelProps) {
       return;
     }
 
-    onSuccess(result.data.country.countryName);
+  onSuccess(result.data.country.country_name);
   }
 
   async function handleGoogleRegister() {
@@ -232,7 +231,7 @@ function RegisterPanel({ onSuccess }: RegisterPanelProps) {
       return;
     }
 
-    onSuccess(result.data.country.countryName);
+  onSuccess(result.data.country.country_name);
   }
 
   return (

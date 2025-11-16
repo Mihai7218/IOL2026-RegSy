@@ -18,11 +18,11 @@ export const FIRST_TEAM_FEE_MATRIX: Record<
 > = {
   "early bird": {
     "Not a Previous Host": 83500,
-    "Previous Host": 83500,
+    "Previous Host": 75500,
   },
   regular: {
     "Not a Previous Host": 95500,
-    "Previous Host": 95500,
+    "Previous Host": 91500,
   },
 }
 
@@ -50,8 +50,8 @@ const singleRoomProcessingFee = 600
 
 // Other per-item fees that don't vary by case
 export const PRICING = {
-  observerFee: 300, // per additional observer
-  singleRoomFee: 200, // per single room request
+  observerFee: 24000, // per additional observer
+  singleRoomFee: 16000, // per single room request
 }
 
 export type PriceBreakdown = {
@@ -83,7 +83,7 @@ export function computeFirstTeamFee(detail: Pick<RegistrationDetailValues, "plan
 // Compute whole months late based on current date and the regular deadline.
 // 5000 is charged per team per month (rounded to nearest whole month, minimum 1 when after deadline).
 function computeMonthsLate(now = new Date(), regularEndOverride?: Date): number {
-  const regularEnd = regularEndOverride ?? new Date("2025-08-31T23:59:59Z")
+  const regularEnd = regularEndOverride ?? new Date("2026-04-30T23:59:59Z")
   if (now <= regularEnd) return 0
 
   const msPerMonthApprox = 30 * 24 * 60 * 60 * 1000
@@ -102,7 +102,8 @@ export function calculatePricing(detail: RegistrationDetailValues): PriceBreakdo
 
   const processingFeeOnline = round2(
     PROCESSING_FEE_VALUE_MATRIX[detail.plan]?.[detail.country_status] ?? 0
-  )
+  ) + detail.additional_observers * observerProcessingFee
+    + detail.single_room_requests * singleRoomProcessingFee
   const totalOnline = round2(subtotal + processingFeeOnline)
   const totalBank = round2(subtotal)
 
@@ -126,8 +127,8 @@ function round2(n: number) {
 // Simple helpers to decide plan by date windows
 export type Plan = RegistrationDetailValues["plan"]
 export function decidePlan(now = new Date(), windows?: { earlyEnd: Date; regularEnd: Date }): Plan {
-  const earlyEnd = windows?.earlyEnd ?? new Date("2025-05-31T23:59:59Z")
-  const regularEnd = windows?.regularEnd ?? new Date("2025-08-31T23:59:59Z")
+  const earlyEnd = windows?.earlyEnd ?? new Date("2026-03-31T23:59:59Z")
+  const regularEnd = windows?.regularEnd ?? new Date("2026-04-30T23:59:59Z")
   if (now <= earlyEnd) return "early bird"
   if (now <= regularEnd) return "regular"
   return "late"
@@ -146,4 +147,5 @@ export const DEFAULT_PREVIOUS_HOSTS = [
   "china",
   "japan",
   "uk",
+  "Admin1",
 ]

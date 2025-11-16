@@ -11,10 +11,11 @@ import { createInviteCode } from '@/services/firebaseApi'
 
 export default function InvitesPage() {
   const { claims } = useAuth()
-  if (!isAdmin(claims)) return <p className='px-10 py-8 text-sm text-muted-foreground'>Admin only.</p>
   const [countryKey, setCountryKey] = useState('')
   const [countryName, setCountryName] = useState('')
   const [result, setResult] = useState<{ code: string; created_at: string } | null>(null)
+
+  if (!isAdmin(claims)) return <p className='px-10 py-8 text-sm text-muted-foreground'>Admin only.</p>
 
   const create = async () => {
   const r = await createInviteCode(countryKey, countryName)

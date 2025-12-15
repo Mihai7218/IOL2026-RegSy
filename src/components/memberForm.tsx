@@ -65,6 +65,7 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
   }, [])
 
   const isObserver = form.watch('role') === 'Observer'
+  const isContestant = form.watch('role') === 'Team Contestant'
   const genderValue = form.watch('gender')
   const teamOptions = useMemo(() => teams.map((t) => ({ id: t.id!, name: t.team_name })), [teams])
 
@@ -253,7 +254,7 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
       </div>
 
       {/* Contest Information */}
-      <div className="space-y-3">
+      {isContestant && (<div className="space-y-3">
         <div className="text-base font-semibold">Contest Information</div>
         <FieldGroup>
            <Controller
@@ -288,7 +289,7 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
             )}
           />
         </FieldGroup>
-      </div>
+      </div>)}
 
       {/* Travel */}
       <div className="space-y-3">

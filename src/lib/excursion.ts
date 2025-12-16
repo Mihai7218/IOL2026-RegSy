@@ -1,0 +1,1 @@
+export const excursionOptions = ['A', 'B', 'C']

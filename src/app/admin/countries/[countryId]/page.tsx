@@ -8,7 +8,9 @@ import { DataTable } from '@/components/dataTable'
 import {
   adminGetCountryProfile,
   adminListCountryMembers,
+  adminListCountryObservers,
   adminListCountryTeams,
+  AdminSightseeingRow,
   type AdminCountryProfile,
   type AdminMemberRow,
   type AdminTeamRow,
@@ -29,12 +31,19 @@ const memberColumns: ColumnDef<AdminMemberRow>[] = [
   { accessorKey: 'indiv_language', header: 'Language' },
 ]
 
+const observerColumns: ColumnDef<AdminSightseeingRow>[] = [
+  { accessorKey: 'display_name', header: 'Display name' },
+  { accessorKey: 'city_tour', header: 'City tour' },
+  { accessorKey: 'excursion_route', header: 'Excursion' },
+]
+
 export default function AdminCountryDetailPage() {
   const params = useParams<{ countryId: string }>()
   const countryId = params?.countryId
   const [profile, setProfile] = useState<AdminCountryProfile | null>(null)
   const [teams, setTeams] = useState<AdminTeamRow[]>([])
   const [members, setMembers] = useState<AdminMemberRow[]>([])
+  const [observers, setObservers] = useState<AdminSightseeingRow[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -42,15 +51,17 @@ export default function AdminCountryDetailPage() {
     let mounted = true
     ;(async () => {
       try {
-        const [profileData, teamRows, memberRows] = await Promise.all([
+        const [profileData, teamRows, memberRows, observerRows] = await Promise.all([
           adminGetCountryProfile(countryId),
           adminListCountryTeams(countryId),
           adminListCountryMembers(countryId),
+          adminListCountryObservers(countryId),
         ])
         if (!mounted) return
         setProfile(profileData)
         setTeams(teamRows)
         setMembers(memberRows)
+        setObservers(observerRows)
       } finally {
         if (mounted) setLoading(false)
       }
@@ -110,6 +121,15 @@ export default function AdminCountryDetailPage() {
         </CardHeader>
         <CardContent>
           <DataTable columns={teamColumns} data={teams} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Observers</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <DataTable columns={observerColumns} data={observers} />
         </CardContent>
       </Card>
 

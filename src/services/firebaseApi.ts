@@ -130,6 +130,8 @@ export type Member = {
   expiry_date?: string
   food_req?: string[]
   other_food_req?: string
+  excursion_route?: string
+  city_tour?: string
 }
 
 export const fetchTeams = async (): Promise<Team[]> => {
@@ -341,6 +343,44 @@ export const adminListAllMembersDetailed = async (): Promise<AdminMemberRow[]> =
   return rows.sort((a, b) => a.country_name.localeCompare(b.country_name))
 }
 
+export type AdminSightseeingRow = Member & {
+  countryId: string
+  country_name: string
+  team_name?: string
+  city_tour?: string
+  excursion?: string
+}
+
+export const adminListAllSightseeingMembersDetailed = async (): Promise<AdminSightseeingRow[]> => {
+  const countriesSnap = await getDocs(collection(db, 'countries'))
+  const rows: AdminMemberRow[] = []
+  for (const countryDoc of countriesSnap.docs) {
+    const data = countryDoc.data() as any
+    const [teamsSnap, membersSnap] = await Promise.all([
+      getDocs(collection(db, 'countries', countryDoc.id, 'teams')),
+      getDocs(collection(db, 'countries', countryDoc.id, 'members')),
+    ])
+    const teamMap = new Map<string, Team>()
+    teamsSnap.forEach((teamDoc) => {
+      const teamData = teamDoc.data() as Team
+      teamMap.set(teamDoc.id, teamData)
+    })
+    membersSnap.forEach((memberDoc) => {
+      const member = memberDoc.data() as Member
+      rows.push({
+        countryId: countryDoc.id,
+        country_name: data?.country_name ?? countryDoc.id,
+        id: memberDoc.id,
+        team_name: member.team ? teamMap.get(member.team)?.team_name ?? member.team : undefined,
+        city_tour: member.team ? teamMap.get(member.team)?.city_tour ?? member.city_tour : undefined,
+        excursion_route: member.team ? teamMap.get(member.team)?.excursion_route ?? member.excursion_route : undefined,
+        ...member,
+      })
+    })
+  }
+  return rows.sort((a, b) => a.country_name.localeCompare(b.country_name))
+}
+
 export type AdminPaymentRow = {
   id: string
   country_name: string
@@ -418,6 +458,26 @@ export const adminListCountryTeams = async (countryId: string): Promise<AdminTea
       team_language: team.team_language,
       city_tour: team.city_tour,
       excursion_route: team.excursion_route,
+    }
+  })
+}
+
+export const adminListCountryObservers = async (countryId: string): Promise<AdminSightseeingRow[]> => {
+  const country = await getDoc(doc(db, 'countries', countryId))
+  if (!country.exists()) return []
+  const countryData = country.data() as any
+  const membersSnap = await getDocs(collection(db, 'countries', countryId, 'members'))
+  return membersSnap.docs.filter((memberDoc) => {
+    return memberDoc.data().role === 'Observer'
+  }).map((memberDoc) => {
+    const member = memberDoc.data() as Member
+    return {
+      countryId,
+      country_name: countryData?.country_name ?? countryId,
+      id: memberDoc.id,
+      ...member,
+      city_tour: member.city_tour ?? '',
+      excursion: member.excursion_route ?? '',
     }
   })
 }

@@ -42,6 +42,16 @@ export default function EditMemberPage() {
       team: member.team ?? '',
       gender: member.gender ?? '',
       ...name,
+      other_gender: member.other_gender ?? '',
+      date_of_birth: member.date_of_birth,
+      tshirt_size: member.tshirt_size,
+      indiv_language: member.indiv_language ?? '',
+      indiv_contest_req: member.indiv_contest_req ?? '',
+      passport_number: member.passport_number ?? '',
+      issue_date: member.issue_date ?? '',
+      expiry_date: member.expiry_date ?? '',
+      food_req: member.food_req ?? [],
+      other_food_req: member.other_food_req ?? '',
     }
   }, [member])
 

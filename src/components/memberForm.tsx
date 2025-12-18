@@ -15,6 +15,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { fetchTeams, type Team } from '@/services/firebaseApi'
 import { Checkbox } from '@/components/ui/checkbox'
 import { languages } from '@/lib/languages'
+import { cityTourOptions } from '@/lib/cityTour'
+import { excursionOptions } from '@/lib/excursion'
 
 export type MemberFormValues = MemberSchemaForm & { id?: string }
 
@@ -57,6 +59,8 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
       expiry_date: initialValues?.expiry_date ?? '',
       food_req: initialValues?.food_req ?? [],
       other_food_req: initialValues?.other_food_req ?? '',
+      excursion_route: initialValues?.excursion_route ?? '',
+      city_tour: initialValues?.city_tour ?? '',
     },
   })
 
@@ -372,7 +376,52 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
           />
         </FieldGroup>
       </div>
-
+      
+      {/*Sightseeing Options*/}
+      {isObserver && (<div className="space-y-3">
+        <div className="text-base font-semibold">Sightseeing Options</div>
+        <FieldGroup>
+          <Controller
+                name="city_tour"
+                control={form.control}
+                render={({ field }) => (
+                  <div>
+                    <Label>City tour route (optional)</Label>
+                    <Select value={field.value || undefined} onValueChange={field.onChange}>
+                      <SelectTrigger className="mt-1">
+                        <SelectValue placeholder="Select route" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {cityTourOptions.map((opt) => (
+                          <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              />
+              <Controller
+                name="excursion_route"
+                control={form.control}
+                render={({ field }) => (
+                  <div>
+                    <Label>Excursion route (optional)</Label>
+                    <Select value={field.value || undefined} onValueChange={field.onChange}>
+                      <SelectTrigger className="mt-1">
+                        <SelectValue placeholder="Select route" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {excursionOptions.map((opt) => (
+                          <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              />
+        </FieldGroup>
+      </div>)}
+      
       <Button type="submit" form="member-form">
         Save
       </Button>

@@ -29,6 +29,8 @@ export default function CreateMemberPage() {
       expiry_date: values.expiry_date ?? '',
       food_req: values.food_req ?? [],
       other_food_req: values.other_food_req ?? '',
+      excursion_route: values.excursion_route ?? '',
+      city_tour: values.city_tour ?? '',
     }
     await upsertMember(m)
     router.push('/members' as Route)

@@ -27,6 +27,10 @@ export const memberFormSchema = z.object({
   // Dietary Requirement
   food_req: z.string().array().optional(),
   other_food_req: z.string().optional(),
+
+  // Observer Sightseeing
+  excursion_route: z.string().optional(),
+  city_tour: z.string().optional(),
 }).superRefine((val, ctx) => {
   // If gender is 'Other', require other_gender (similar to terminal-other pattern)
   if (val.gender === 'Other' && !val.other_gender?.trim()) {

@@ -154,7 +154,7 @@ export function AppSidebar() {
                 </div>
             ) : (
               <>
-              <Image src="/images/logo/icon_small.png" alt="User Avatar" width={40} height={40} className="rounded-full" />
+              <Image src="/images/logo/logo.svg" alt="User Avatar" width={40} height={40} className="" />
               <div>
                 <p className="text-sm font-medium">{currentUser?.name}</p>
                 <p className="text-xs text-gray-500">{currentUser?.email}</p>

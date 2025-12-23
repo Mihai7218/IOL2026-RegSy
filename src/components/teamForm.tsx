@@ -17,6 +17,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { languages } from "@/lib/languages"
+import { cityTourOptions } from "@/lib/cityTour"
+import { excursionOptions } from "@/lib/excursion"
 
 export type TeamFormValues = TeamSchemaForm & { id?: string }
 
@@ -88,7 +90,7 @@ export function TeamForm({
                   <SelectValue placeholder="Select route" />
                 </SelectTrigger>
                 <SelectContent>
-                  {['A','B','C'].map((opt) => (
+                  {cityTourOptions.map((opt) => (
                     <SelectItem key={opt} value={opt}>{opt}</SelectItem>
                   ))}
                 </SelectContent>
@@ -107,7 +109,7 @@ export function TeamForm({
                   <SelectValue placeholder="Select route" />
                 </SelectTrigger>
                 <SelectContent>
-                  {['A','B','C'].map((opt) => (
+                  {excursionOptions.map((opt) => (
                     <SelectItem key={opt} value={opt}>{opt}</SelectItem>
                   ))}
                 </SelectContent>

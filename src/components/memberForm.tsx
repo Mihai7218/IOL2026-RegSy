@@ -9,7 +9,7 @@ import { memberFormSchema, type MemberForm as MemberSchemaForm } from '@/schemas
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { FieldGroup } from '@/components/ui/field'
+import { FieldGroup, FieldError } from '@/components/ui/field'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { fetchTeams, type Team } from '@/services/firebaseApi'
@@ -101,6 +101,9 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
                     ))}
                   </SelectContent>
                 </Select>
+                {form.formState.errors.role && (
+                  <FieldError errors={[form.formState.errors.role]} />
+                )}
               </div>
             )}
           />
@@ -123,6 +126,9 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
                       ))}
                     </SelectContent>
                   </Select>
+                {form.formState.errors.team && (
+                  <FieldError errors={[form.formState.errors.team]} />
+                )}
                 </div>
               )}
             />
@@ -137,6 +143,9 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
               <div>
                 <Label>Given name</Label>
                 <Input placeholder="Enter given name" {...field} />
+                {form.formState.errors.given_name && (
+                  <FieldError errors={[form.formState.errors.given_name]} />
+                )}
               </div>
             )}
           />
@@ -157,6 +166,9 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
               <div>
                 <Label>Last name</Label>
                 <Input placeholder="Enter last name" {...field} />
+                {form.formState.errors.last_name && (
+                  <FieldError errors={[form.formState.errors.last_name]} />
+                )}
               </div>
             )}
           />
@@ -170,6 +182,9 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
               <div>
                 <Label>Display name</Label>
                 <Input placeholder="Enter display name" {...field} />
+                {form.formState.errors.display_name && (
+                  <FieldError errors={[form.formState.errors.display_name]} />
+                )}
               </div>
             )}
           />
@@ -180,6 +195,9 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
               <div>
                 <Label>Preferred name</Label>
                 <Input placeholder="Enter preferred name" {...field} />
+                {form.formState.errors.preferred_name && (
+                  <FieldError errors={[form.formState.errors.preferred_name]} />
+                )}
               </div>
             )}
           />
@@ -205,6 +223,9 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
                     )
                   })}
                 </RadioGroup>
+                {form.formState.errors.gender && (
+                  <FieldError errors={[form.formState.errors.gender]} />
+                )}
               </div>
             )}
           />
@@ -216,6 +237,9 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
                 <div>
                   <Label>Specify gender</Label>
                   <Input placeholder="Enter gender" {...field} />
+                  {form.formState.errors.other_gender && (
+                    <FieldError errors={[form.formState.errors.other_gender]} />
+                  )}
                 </div>
               )}
             />
@@ -230,6 +254,9 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
               <div>
                 <Label>Date of birth</Label>
                 <Input type="date" {...field} />
+                {form.formState.errors.date_of_birth && (
+                  <FieldError errors={[form.formState.errors.date_of_birth]} />
+                )}
               </div>
             )}
           />
@@ -251,6 +278,9 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
                     ))}
                   </SelectContent>
                 </Select>
+                {form.formState.errors.tshirt_size && (
+                  <FieldError errors={[form.formState.errors.tshirt_size]} />
+                )}
               </div>
             )}
           />

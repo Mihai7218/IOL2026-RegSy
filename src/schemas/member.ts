@@ -32,6 +32,16 @@ export const memberFormSchema = z.object({
   excursion_route: z.string().optional(),
   city_tour: z.string().optional(),
 }).superRefine((val, ctx) => {
+
+  // If a contestant, they should be less than 20 on the date of the individual contest
+  if (val.role === 'Team Contestant' && new Date(val.date_of_birth) < new Date("2006-07-28")) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.invalid_date,
+      message: 'Contestants should be less than 20 on the first day of the competition (born on or after July 28th, 2006).',
+      path: ['date_of_birth'],
+    })
+  }
+
   // If gender is 'Other', require other_gender (similar to terminal-other pattern)
   if (val.gender === 'Other' && !val.other_gender?.trim()) {
     ctx.addIssue({

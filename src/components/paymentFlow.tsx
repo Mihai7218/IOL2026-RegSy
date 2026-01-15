@@ -12,7 +12,7 @@ import {
 } from "@/schemas/payment"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { FieldGroup, FieldLabel } from "@/components/ui/field"
+import { FieldGroup, FieldLabel, FieldError } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -71,6 +71,10 @@ export default function PaymentFlow() {
       transaction_number: "",
       order_number: "",
       need_invoice: false,
+      invoice_data: {
+        entity_name: "",
+        address: "",
+      }
     },
   })
 
@@ -428,7 +432,7 @@ export default function PaymentFlow() {
                           <li>Bank: BRD, Compozitorilor Branch</li>
                           <li>SWIFT: BRDEROBU</li>
                         </ul>
-                        <p>Include your country/team name in the transfer remark. Keep the transaction/reference number.</p>
+                        <p>Include your country in the transfer remark. Keep the transaction/reference number.</p>
                         <p className="font-semibold">Please ensure that you cover all transaction fees.</p>
                       </div>
                     </CardContent>
@@ -441,8 +445,11 @@ export default function PaymentFlow() {
                         name="transaction_number"
                         render={({ field }) => (
                           <div>
-                            <Label>Transaction/Reference number</Label>
+                            <Label>Transaction/Reference number *</Label>
                             <Input placeholder="Enter transaction/reference number" {...field} />
+                            {confirmForm.formState.errors.transaction_number && (
+                              <FieldError errors={[confirmForm.formState.errors.transaction_number]} />
+                            )}
                           </div>
                         )}
                       />
@@ -461,6 +468,37 @@ export default function PaymentFlow() {
                       )}
                     />
                   </div>
+
+                  {confirmForm.watch('need_invoice') && (
+                    <FieldGroup>
+                      <Controller
+                        control={confirmForm.control}
+                        name="invoice_data.entity_name"
+                        render={({ field }) => (
+                          <div>
+                            <Label>Entity name *</Label>
+                            <Input placeholder="Enter entity name" {...field} />
+                            {confirmForm.formState.errors.invoice_data?.entity_name && (
+                              <FieldError errors={[confirmForm.formState.errors.invoice_data.entity_name]} />
+                            )}
+                          </div>
+                        )}
+                      />
+                      <Controller
+                        control={confirmForm.control}
+                        name="invoice_data.address"
+                        render={({ field }) => (
+                          <div>
+                            <Label>Address *</Label>
+                            <Input placeholder="Enter address" {...field} />
+                            {confirmForm.formState.errors.invoice_data?.address && (
+                              <FieldError errors={[confirmForm.formState.errors.invoice_data.address]} />
+                            )}
+                          </div>
+                        )}
+                      />
+                    </FieldGroup>
+                  )}
 
                   <div className="space-y-3">
                     {/* Show totals with and without processing fee */}
@@ -540,6 +578,22 @@ export default function PaymentFlow() {
                       <span className="text-muted-foreground">Need invoice:</span>{" "}
                       {savedConfirmation.need_invoice ? "Yes" : "No"}
                       </div>
+                      {savedConfirmation.need_invoice && savedConfirmation.invoice_data && (
+                        <>
+                          {savedConfirmation.invoice_data.entity_name && (
+                            <div className="break-words">
+                              <span className="text-muted-foreground">Entity name:</span>{" "}
+                              {savedConfirmation.invoice_data.entity_name}
+                            </div>
+                          )}
+                          {savedConfirmation.invoice_data.address && (
+                            <div className="break-words">
+                              <span className="text-muted-foreground">Address:</span>{" "}
+                              {savedConfirmation.invoice_data.address}
+                            </div>
+                          )}
+                        </>
+                      )}
                       <div className="break-words">
                       <span className="text-muted-foreground">Plan:</span> {savedRegistration.plan}
                       </div>

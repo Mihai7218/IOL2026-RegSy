@@ -61,7 +61,7 @@ const menuItems = [
       {
         icon: Banknote,
         status: status.TIME_SENSITIVE,
-        label: "Payments",
+        label: "Payment",
         href: "/payments",
         visible: ["admin", "country"],
       },

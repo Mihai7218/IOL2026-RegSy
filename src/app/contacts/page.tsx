@@ -1,36 +1,47 @@
 'use client'
 
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { useEffect, useState } from 'react'
+import { useForm, Controller } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { toast } from 'sonner'
+
+import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
-import { Controller, useForm } from 'react-hook-form'
-import * as z from "zod"
-import { toast } from "sonner"
-import { zodResolver } from '@hookform/resolvers/zod'
-import { ContactForm, contactSchema } from '@/schemas/contact'
-import { useEffect } from 'react'
+import { FieldGroup } from '@/components/ui/field'
+
 import { fetchContacts, upsertContacts } from '@/services/firebaseApi'
-import {
-  Field,
-  FieldDescription,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-} from "@/components/ui/field"
+import { ContactForm, contactSchema } from '@/schemas/contact'
 
 export default function ContactsPage() {
+  const [showSecondary, setShowSecondary] = useState(false)
+
+  const EMPTY_SECONDARY = {
+          name: '',
+          email: '',
+          phone: '',
+          whatsapp: '',
+        }
+
   const form = useForm<ContactForm>({
     resolver: zodResolver(contactSchema),
+    mode: 'onChange',
     defaultValues: {
       primary: { name: '', email: '', phone: '', whatsapp: '' },
       secondary: { name: '', email: '', phone: '', whatsapp: '' },
     },
   })
 
+  const {
+    formState: { errors, isValid },
+  } = form
+
   useEffect(() => {
-    fetchContacts().then((c) => {
+    fetchContacts().then(c => {
       if (!c) return
+      setShowSecondary(!!c.secondary)
+
       form.reset({
         primary: {
           name: c.primary.name ?? '',
@@ -40,47 +51,38 @@ export default function ContactsPage() {
         },
         secondary: {
           name: c.secondary?.name ?? '',
-          email: (c.secondary?.email as string | undefined) ?? '',
+          email: c.secondary?.email ?? '',
           phone: c.secondary?.phone ?? '',
           whatsapp: c.secondary?.whatsapp ?? '',
         },
       })
     })
-    // `form` is stable from `useForm`, safe to omit from deps
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  async function onSubmit(data: z.infer<typeof contactSchema>) {
+  async function onSubmit(data: ContactForm) {
     try {
-      // Only include secondary if at least one field is provided
-      const hasSecondary = [
-        data.secondary?.name,
-        data.secondary?.email,
-        data.secondary?.phone,
-        data.secondary?.whatsapp,
-      ].some(v => (v ?? '').toString().trim() !== '')
+      const hasSecondary = Object.values(data.secondary ?? {}).some(
+        v => v?.trim()
+      )
 
-      const payload: ContactForm = {
+      await upsertContacts({
         primary: {
           name: data.primary.name.trim(),
           email: data.primary.email.trim(),
-          phone: (data.primary.phone ?? '').trim(),
-          // store empty string as empty string (never undefined) to avoid Firestore error
-          whatsapp: (data.primary.whatsapp ?? '').trim(),
+          phone: data.primary.phone?.trim() ?? '',
+          whatsapp: data.primary.whatsapp?.trim() ?? '',
         },
-        // Only include secondary if at least one field is provided; when included, normalise
-        // empty strings to empty string so we never send `undefined` into Firestore.
-        secondary: hasSecondary && data.secondary
+        secondary: hasSecondary
           ? {
-              name: (data.secondary.name ?? ' ').trim(),
-              email: (data.secondary.email ?? ' ').trim(),
-              phone: (data.secondary.phone ?? ' ').trim(),
-              whatsapp: (data.secondary.whatsapp ?? ' ').trim(),
+              name: data.secondary?.name?.trim() ?? '',
+              email: data.secondary?.email?.trim() ?? '',
+              phone: data.secondary?.phone?.trim() ?? '',
+              whatsapp: data.secondary?.whatsapp?.trim() ?? '',
             }
-          : undefined,
-      }
+          : EMPTY_SECONDARY,
+      } as any)
 
-      await upsertContacts(payload as any)
       toast.success('Contacts saved')
     } catch (e: any) {
       toast.error(e?.message ?? 'Failed to save contacts')
@@ -88,110 +90,100 @@ export default function ContactsPage() {
   }
 
   return (
-    <div className='space-y-4 px-10'>
-      <div className='flex items-center justify-between'>
-        <h1 className='text-xl font-semibold'>Contact</h1>
-      </div>
+    <div className="space-y-4 px-10">
+      <h1 className="text-xl font-semibold">Contacts</h1>
+
       <Card>
         <CardContent>
-          <form id="contact-form" onSubmit={form.handleSubmit(onSubmit)}>
-            <div className='pt-4 space-y-6 pr-10'>
-              <div>
-                <div className='font-medium mb-2'>Primary contact</div>
-                <FieldGroup>
-                  <Controller
-                    name="primary.name"
-                    control={form.control}
-                    render={({ field }) => (
-                      <div>
-                        <Label>Name</Label>
-                        <Input {...field} />
-                      </div>
-                    )}
-                  />
-                  <Controller
-                    name="primary.email"
-                    control={form.control}
-                    render={({ field }) => (
-                      <div>
-                        <Label>Email</Label>
-                        <Input {...field} />
-                      </div>
-                    )}
-                  />
-                  <Controller
-                    name="primary.phone"
-                    control={form.control}
-                    render={({ field }) => (
-                      <div>
-                        <Label>Telephone</Label>
-                        <Input {...field} />
-                      </div>
-                    )}
-                  />
-                  <Controller
-                    name="primary.whatsapp"
-                    control={form.control}
-                    render={({ field }) => (
-                      <div>
-                        <Label>WhatsApp</Label>
-                        <Input {...field} />
-                      </div>
-                    )}
-                  />
-                </FieldGroup>
-              </div>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {/* PRIMARY */}
+            <section>
+              <div className="font-medium text-xl mt-6">Primary contact</div>
+              <div className='font-small mb-6 text-sm text-muted-foreground'>This can be any person that will register the team(s) and do the payment, not necessarily the team leader accompanying the students.</div>
+              <FieldGroup>
+                <Field
+                  name="primary.name"
+                  label="Name *"
+                  control={form.control}
+                  error={errors.primary?.name?.message}
+                />
+                <Field
+                  name="primary.email"
+                  label="Email *"
+                  control={form.control}
+                  error={errors.primary?.email?.message}
+                />
+                <Field name="primary.phone" label="Telephone" control={form.control} />
+                <Field name="primary.whatsapp" label="WhatsApp" control={form.control} />
+              </FieldGroup>
+            </section>
 
-              <div>
-                <div className='font-medium mb-2'>Secondary contact</div>
+            {/* SECONDARY */}
+            {!showSecondary && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowSecondary(true)}
+              >
+                Add secondary contact
+              </Button>
+            )}
+
+            {showSecondary && (
+              <section>
+                <div className="font-medium text-xl mb-2">Secondary contact</div>
                 <FieldGroup>
-                  <Controller
+                  <Field
                     name="secondary.name"
+                    label="Name"
                     control={form.control}
-                    render={({ field }) => (
-                      <div>
-                        <Label>Name</Label>
-                        <Input {...field} />
-                      </div>
-                    )}
+                    error={errors.secondary?.name?.message}
                   />
-                  <Controller
+                  <Field
                     name="secondary.email"
+                    label="Email"
                     control={form.control}
-                    render={({ field }) => (
-                      <div>
-                        <Label>Email</Label>
-                        <Input {...field} />
-                      </div>
-                    )}
+                    error={errors.secondary?.email?.message}
                   />
-                  <Controller
-                    name="secondary.phone"
-                    control={form.control}
-                    render={({ field }) => (
-                      <div>
-                        <Label>Telephone</Label>
-                        <Input {...field} />
-                      </div>
-                    )}
-                  />
-                  <Controller
-                    name="secondary.whatsapp"
-                    control={form.control}
-                    render={({ field }) => (
-                      <div>
-                        <Label>WhatsApp</Label>
-                        <Input {...field} />
-                      </div>
-                    )}
-                  />
+                  <Field name="secondary.phone" label="Telephone" control={form.control} />
+                  <Field name="secondary.whatsapp" label="WhatsApp" control={form.control} />
                 </FieldGroup>
-              </div>
-            </div>
-            <Button type="submit" form="contact-form" className='mt-4'>Save</Button>
+              </section>
+            )}
+
+            <Button type="submit" disabled={!isValid}>
+              Save
+            </Button>
           </form>
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+/* Reusable Field */
+function Field({
+  name,
+  label,
+  control,
+  error,
+}: {
+  name: any
+  label: string
+  control: any
+  error?: string
+}) {
+  return (
+    <Controller
+      name={name}
+      control={control}
+      render={({ field }) => (
+        <div>
+          <Label>{label}</Label>
+          <Input {...field} />
+          {error && <p className="text-sm text-red-500">{error}</p>}
+        </div>
+      )}
+    />
   )
 }

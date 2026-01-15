@@ -11,10 +11,36 @@ export const registrationDetailSchema = z.object({
 
 export type RegistrationDetailValues = z.infer<typeof registrationDetailSchema>;
 
+export const invoiceDataSchema = z.object({
+  entity_name: z.string().min(1, 'Entity name is required'),
+  address: z.string().min(1, 'Address is required'),
+})
+
+export type InvoiceDataValues = z.infer<typeof invoiceDataSchema>;
+
 export const paymentConfirmationSchema = z.object({
-  transaction_number: z.string(),
+  transaction_number: z.string().min(1, 'Transaction number is required'),
   order_number: z.string().optional(),
   need_invoice: z.boolean().optional(),
+  invoice_data: invoiceDataSchema.optional(),
+}).superRefine((val, ctx) => {
+  // If need_invoice is true, invoice_data must be provided with entity_name and address
+  if (val.need_invoice) {
+    if (!val.invoice_data?.entity_name?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Entity name is required when invoice is needed',
+        path: ['invoice_data', 'entity_name'],
+      })
+    }
+    if (!val.invoice_data?.address?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Address is required when invoice is needed',
+        path: ['invoice_data', 'address'],
+      })
+    }
+  }
 });
 
 export type PaymentConfirmationValues = z.infer<typeof paymentConfirmationSchema>;

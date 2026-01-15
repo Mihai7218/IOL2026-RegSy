@@ -9,6 +9,7 @@ export default function Page() {
       <Card>
         <CardContentFirst>
           <p>Welcome. Use the sidebar to manage your registration.</p>
+          <p>If you encounter any issues or have any questions, contact us at <a href='mailto:iol2026ro@gmail.com'>iol2026ro@gmail.com</a>.</p>
         </CardContentFirst>
       </Card>
     </div>

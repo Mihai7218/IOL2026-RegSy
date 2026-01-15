@@ -33,6 +33,8 @@ import { saveRegistrationDetails, submitPaymentConfirmation, loadPaymentState } 
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import Images from "next/image"
 import { toast } from "sonner"
+import { storage } from "@/lib/firebase"
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage"
 
 export default function PaymentFlow() {
   const { claims } = useAuth()
@@ -74,9 +76,45 @@ export default function PaymentFlow() {
       invoice_data: {
         entity_name: "",
         address: "",
-      }
+      },
+      proof_of_payment_url: "",
     },
   })
+
+  const [uploading, setUploading] = useState(false)
+
+  async function handleFileUpload(file: File) {
+    if (!file) return null
+    
+    setUploading(true)
+    try {
+      const { auth } = await import("@/lib/firebase")
+      const user = auth.currentUser
+      if (!user) throw new Error("Not authenticated")
+      
+      // Create a unique filename
+      const timestamp = Date.now()
+      const filename = `payment-proofs/${user.uid}/${timestamp}_${file.name}`
+      const storageRef = ref(storage, filename)
+      
+      // Upload file
+      await uploadBytes(storageRef, file)
+      
+      // Get download URL
+      const downloadURL = await getDownloadURL(storageRef)
+      
+      // Update form with URL
+      confirmForm.setValue("proof_of_payment_url", downloadURL)
+      
+      toast.success("File uploaded successfully")
+      return downloadURL
+    } catch (error: any) {
+      toast.error(error?.message ?? "Failed to upload file")
+      return null
+    } finally {
+      setUploading(false)
+    }
+  }
 
   useEffect(() => {
     // keep plan/country status fixed
@@ -438,6 +476,23 @@ export default function PaymentFlow() {
                     </CardContent>
                   </Card>
 
+                  <div className="space-y-3">
+                    {/* Show totals with and without processing fee */}
+                    <div className="text-sm">
+                      <div className="flex justify-between">
+                        <span>Subtotal</span>
+                        <span>{breakdown.subtotal} lei</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Paid before</span>
+                        <span>{breakdown.paid_before} lei</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Total</span>
+                        <span>{breakdown.totalBank} lei</span>
+                      </div>
+                    </div>
+
                   <FieldGroup>
                     <div>
                       <Controller
@@ -453,6 +508,30 @@ export default function PaymentFlow() {
                           </div>
                         )}
                       />
+                    </div>
+                  </FieldGroup>
+                    
+                  <FieldGroup>
+                    <div>
+                      <Label>Proof of payment *</Label>
+                      <Input
+                        type="file"
+                        accept="image/*,application/pdf"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0]
+                          if (file) {
+                            await handleFileUpload(file)
+                          }
+                        }}
+                        disabled={uploading}
+                      />
+                      {uploading && <p className="text-sm text-muted-foreground">Uploading...</p>}
+                      {confirmForm.watch("proof_of_payment_url") && !uploading && (
+                        <p className="text-sm text-green-600">✓ File uploaded</p>
+                      )}
+                      {confirmForm.formState.errors.proof_of_payment_url && (
+                        <FieldError errors={[confirmForm.formState.errors.proof_of_payment_url]} />
+                      )}
                     </div>
                   </FieldGroup>
 
@@ -499,38 +578,6 @@ export default function PaymentFlow() {
                       />
                     </FieldGroup>
                   )}
-
-                  <div className="space-y-3">
-                    {/* Show totals with and without processing fee */}
-                    <div className="text-sm">
-                      <div className="flex justify-between">
-                        <span>Subtotal</span>
-                        <span>{breakdown.subtotal} lei</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Paid before</span>
-                        <span>{breakdown.paid_before} lei</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Total</span>
-                        <span>{breakdown.totalBank} lei</span>
-                      </div>
-                    </div>
-                    
-                  {/* <FieldGroup>
-                    <div>
-                      <Controller
-                        control={confirmForm.control}
-                        name="proof_of_payment"
-                        render={({ field }) => (
-                          <div>
-                            <Label>Proof of payment</Label>
-                            <FileInput {...field} />
-                          </div>
-                        )}
-                      />
-                    </div>
-                  </FieldGroup> */}
 
                     <div className="flex gap-3">
                       <Button type="submit">Submit payment</Button>
@@ -593,6 +640,19 @@ export default function PaymentFlow() {
                             </div>
                           )}
                         </>
+                      )}
+                      {savedConfirmation.proof_of_payment_url && (
+                        <div className="break-words col-span-2">
+                          <span className="text-muted-foreground">Proof of payment:</span>{" "}
+                          <a
+                            href={savedConfirmation.proof_of_payment_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary underline hover:no-underline"
+                          >
+                            View document
+                          </a>
+                        </div>
                       )}
                       <div className="break-words">
                       <span className="text-muted-foreground">Plan:</span> {savedRegistration.plan}

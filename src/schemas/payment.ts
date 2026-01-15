@@ -23,6 +23,7 @@ export const paymentConfirmationSchema = z.object({
   order_number: z.string().optional(),
   need_invoice: z.boolean().optional(),
   invoice_data: invoiceDataSchema.optional(),
+  proof_of_payment_url: z.string().min(1, 'Proof of payment is required'),
 }).superRefine((val, ctx) => {
   // If need_invoice is true, invoice_data must be provided with entity_name and address
   if (val.need_invoice) {

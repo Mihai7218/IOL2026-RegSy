@@ -2,18 +2,18 @@ import { z } from "zod";
 
 export const registrationDetailSchema = z.object({
   plan: z.enum(["early bird", "regular", "late"]),
-  country_status: z.enum(["Previous Host", "Not a Previous Host"]),
+  country_status: z.enum(["Previous Host", "Not a Previous Host", "Not accredited"]),
   number_of_teams: z.number().int().min(1).max(2),
-  additional_observers: z.number().int().min(0).max(2),
-  role_of_observer: z.string().min(1, "Role of observer is required"),
+  additional_observers: z.number().int().min(0),
   single_room_requests: z.number().int().min(0),
+  paid_before: z.number().min(0),
 });
 
 export type RegistrationDetailValues = z.infer<typeof registrationDetailSchema>;
 
 export const paymentConfirmationSchema = z.object({
   payment_method: z.string().min(1, "Payment method is required"),
-  transaction_number: z.string().optional(),
+  transaction_number: z.string(),
   order_number: z.string().optional(),
   need_invoice: z.boolean().optional(),
 });

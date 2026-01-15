@@ -46,7 +46,7 @@ export default function AdminSightseeingPage() {
       <CardHeader>
         <CardTitle>Sightseeing</CardTitle>
         <p className="text-sm text-muted-foreground">
-          Filterable list of every member's sightseeing option to support excursion/city tour spot checks.
+          Filterable list of every member&apos;s sightseeing option to support excursion/city tour spot checks.
         </p>
       </CardHeader>
       <CardContent>

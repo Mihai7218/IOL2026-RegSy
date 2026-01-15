@@ -71,21 +71,21 @@ const menuItems = [
         status: status.TIME_SENSITIVE,
         label: "Teams",
         href: "/teams",
-        visible: ["admin", "country"],
+        visible: ["admin"],
       },
       {
         icon: User,
         status: status.TIME_SENSITIVE,
         label: "Members",
         href: "/members",
-        visible: ["admin", "country"],
+        visible: ["admin"],
       },
       {
         icon: Plane,
         status: status.TIME_SENSITIVE,
         label: "Transportation",
         href: "/transport",
-        visible: ["admin", "country", "volunteer", "jury"],
+        visible: ["admin"],
       },
       
   ];

@@ -54,12 +54,14 @@ export default function PaymentFlow() {
       country_status: fixedCountryStatus,
       number_of_teams: 1,
       additional_observers: 0,
-      role_of_observer: "",
+      paid_before: 0,
       single_room_requests: 0,
     },
   })
 
-  const watchedValues = regForm.watch()
+  let watchedValuesRaw = regForm.watch()
+  watchedValuesRaw["paid_before"] = savedRegistration?.paid_before ?? 0
+  const watchedValues = watchedValuesRaw
   // Pricing preview for callout
   const breakdown = useMemo(() => calculatePricing(watchedValues), [watchedValues])
 
@@ -124,8 +126,6 @@ export default function PaymentFlow() {
         values,
         {
           subtotal: totals.subtotal,
-          processingFeeOnline: totals.processingFeeOnline,
-          totalOnline: totals.totalOnline,
           totalBank: totals.totalBank,
         },
         PaymentStep.PaymentConfirmation,
@@ -146,8 +146,6 @@ export default function PaymentFlow() {
         values,
         {
           subtotal: totals.subtotal,
-          processingFeeOnline: totals.processingFeeOnline,
-          totalOnline: totals.totalOnline,
           totalBank: totals.totalBank,
         },
         PaymentStep.WaitingForVerification,
@@ -240,20 +238,12 @@ export default function PaymentFlow() {
           </Card>
 
           {/* Image placeholders */}
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div className="grid grid-cols-1">
             <div className="rounded-md border">
                 <Images
                     src="/images/misc/prices_general.png"
-                    width={820} height={283}
+                    width={2880} height={543}
                     alt="Pricing general"
-                    className="w-full h-full"
-                />
-            </div>
-            <div className="rounded-md border">
-                <Images
-                    src="/images/misc/prices_previous_host.png"
-                    width={820} height={283}
-                    alt="Pricing previous host"
                     className="w-full h-full"
                 />
             </div>
@@ -291,7 +281,7 @@ export default function PaymentFlow() {
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="1">1</SelectItem>
-                              <SelectItem value="2">2</SelectItem>
+                              {regForm.watch("country_status") != "Not accredited" && <SelectItem value="2">2</SelectItem>}
                             </SelectContent>
                           </Select>
                         </div>
@@ -303,18 +293,7 @@ export default function PaymentFlow() {
                       render={({ field }) => (
                         <div>
                           <Label>Additional observers</Label>
-                          <Select value={String(field.value)} onValueChange={(v) => field.onChange(Number(v))}>
-                            <SelectTrigger className="mt-1">
-                              <SelectValue placeholder="Select" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {[0, 1, 2].map((n) => (
-                                <SelectItem key={n} value={String(n)}>
-                                  {n}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <Input type="number" placeholder="0" min={0} {...field} />
                         </div>
                       )}
                     />
@@ -323,32 +302,11 @@ export default function PaymentFlow() {
                   <FieldGroup>
                     <Controller
                       control={regForm.control}
-                      name="role_of_observer"
-                      render={({ field }) => (
-                        <div>
-                          <Label>Role of observer</Label>
-                          <Input placeholder="Enter role" {...field} />
-                        </div>
-                      )}
-                    />
-                    <Controller
-                      control={regForm.control}
                       name="single_room_requests"
                       render={({ field }) => (
                         <div>
                           <Label>Single room requests</Label>
-                          <Select value={String(field.value)} onValueChange={(v) => field.onChange(Number(v))}>
-                            <SelectTrigger className="mt-1">
-                              <SelectValue placeholder="Select" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {[0, 1, 2, 3, 4, 5].map((n) => (
-                                <SelectItem key={n} value={String(n)}>
-                                  {n}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <Input type="number" placeholder="0" min={0} {...field} />
                         </div>
                       )}
                     />
@@ -380,9 +338,6 @@ export default function PaymentFlow() {
                             <span className="text-muted-foreground">Additional observers:</span> {regForm.watch("additional_observers")}
                           </div>
                           <div>
-                            <span className="text-muted-foreground">Observer role:</span> {regForm.watch("role_of_observer") || "—"}
-                          </div>
-                          <div>
                             <span className="text-muted-foreground">Single room:</span> {regForm.watch("single_room_requests")}
                           </div>
                         </div>
@@ -405,39 +360,35 @@ export default function PaymentFlow() {
               <CardContent className=" space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span>Original plan price (per 1st team)</span>
-                  <span>${breakdown.planBaseFirstTeam}</span>
+                  <span>{breakdown.planBaseFirstTeam} lei</span>
                 </div>
                 <div className="flex justify-between text-muted-foreground">
                   <span>Adjusted 1st team</span>
-                  <span>${breakdown.firstTeamAfterAdjustments}</span>
+                  <span>{breakdown.firstTeamAfterAdjustments} lei</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Teams cost</span>
-                  <span>${breakdown.teamsCost}</span>
+                  <span>{breakdown.teamsCost} lei</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Additional observers</span>
-                  <span>${breakdown.observersCost}</span>
+                  <span>{breakdown.observersCost} lei</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Single room requests</span>
-                  <span>${breakdown.singleRoomsCost}</span>
+                  <span>{breakdown.singleRoomsCost} lei</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Subtotal</span>
+                  <span>{breakdown.subtotal} lei</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Paid before</span>
+                  <span>{breakdown.paid_before} lei</span>
                 </div>
                 <div className="flex justify-between font-medium">
-                  <span>Subtotal</span>
-                  <span>${breakdown.subtotal}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Processing fee (online only)</span>
-                  <span>${breakdown.processingFeeOnline}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Estimated total (online)</span>
-                  <span>${breakdown.totalOnline}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Estimated total (bank)</span>
-                  <span>${breakdown.totalBank}</span>
+                  <span>Total</span>
+                  <span>{breakdown.totalBank} lei</span>
                 </div>
               </CardContent>
             </Card>
@@ -466,49 +417,16 @@ export default function PaymentFlow() {
                 >
                   <FieldGroup>
                     <div>
-                      <Label>Payment method</Label>
-                      <Select
-                        value={method}
-                        onValueChange={(v: PaymentMethodOption) => {
-                          setMethod(v)
-                          confirmForm.setValue("payment_method", v)
-                        }}
-                      >
-                        <SelectTrigger className="mt-1">
-                          <SelectValue placeholder="Select method" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Online Payment Platform">Online Payment Platform</SelectItem>
-                          <SelectItem value="Direct Bank Transfer">Direct Bank Transfer</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      {method === "Online Payment Platform" ? (
-                        <Controller
-                          control={confirmForm.control}
-                          name="order_number"
-                          render={({ field }) => (
-                            <div>
-                              <Label>Order number</Label>
-                              <Input placeholder="Enter order number" {...field} />
-                            </div>
-                          )}
-                        />
-                      ) : method === "Direct Bank Transfer" ? (
-                        <Controller
-                          control={confirmForm.control}
-                          name="transaction_number"
-                          render={({ field }) => (
-                            <div>
-                              <Label>Transaction number</Label>
-                              <Input placeholder="Enter transaction number" {...field} />
-                            </div>
-                          )}
-                        />
-                      ) : (
-                        <div />
-                      )}
+                      <Controller
+                        control={confirmForm.control}
+                        name="transaction_number"
+                        render={({ field }) => (
+                          <div>
+                            <Label>Transaction/Reference number</Label>
+                            <Input placeholder="Enter transaction/reference number" {...field} />
+                          </div>
+                        )}
+                      />
                     </div>
                   </FieldGroup>
 
@@ -526,56 +444,61 @@ export default function PaymentFlow() {
                   </div>
 
                   {/* Instructions */}
-                  {method && (
-                    <Card className="border-dashed">
-                      <CardHeader>
-                        <CardTitle className="text-sm">Payment instructions</CardTitle>
-                      </CardHeader>
-                      <CardContent className="text-sm text-muted-foreground">
-                        {method === "Online Payment Platform" ? (
-                          <p>
-                            You will be redirected to our secure payment platform to complete the payment. Keep the order
-                            number for your records.
-                          </p>
-                        ) : (
-                          <div className="space-y-1">
-                            <p>Transfer the total amount to the following bank account:</p>
-                            <ul className="list-disc pl-6">
-                              <li>Account Name: Example Org</li>
-                              <li>Account No: 000-123-456</li>
-                              <li>Bank: Example Bank, Main Branch</li>
-                              <li>SWIFT: EXAMP123</li>
-                            </ul>
-                            <p>Include your country/team name in the transfer remark. Keep the transaction number.</p>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  )}
+                  <Card className="border-dashed">
+                    <CardHeader>
+                      <CardTitle className="text-sm">Payment instructions</CardTitle>
+                    </CardHeader>
+                    <CardContent className="text-sm text-muted-foreground">
+                      <div className="space-y-1">
+                        <p>Transfer the total amount to the following bank account:</p>
+                        <ul className="list-disc pl-6">
+                          <li>Beneficiary: ASOCIAȚIA ALUMNI A UNIVERSITĂȚII DIN BUCUREȘTI</li>
+                          <li>Address: B-dul Regina Elisabeta, nr. 4-12,et. Subsol, Ap.Sala M 6, Bucureşti, Sector 3</li>
+                          <li>IBAN: RO52BRDE410SV57544994100</li>
+                          <li>CUI: 29223620</li>
+                          <li>Bank: BRD, Compozitorilor Branch</li>
+                          <li>SWIFT: BRDEROBU</li>
+                        </ul>
+                        <p>Include your country/team name in the transfer remark. Keep the transaction/reference number.</p>
+                        <p className="font-semibold">Please ensure that you cover all transaction fees.</p>
+                      </div>
+                    </CardContent>
+                  </Card>
 
                   <div className="space-y-3">
                     {/* Show totals with and without processing fee */}
                     <div className="text-sm">
                       <div className="flex justify-between">
-                        <span>Subtotal (without processing fee)</span>
-                        <span>${breakdown.subtotal}</span>
+                        <span>Subtotal</span>
+                        <span>{breakdown.subtotal} lei</span>
                       </div>
                       <div className="flex justify-between">
-                        <span>Processing fee (online only)</span>
-                        <span>${breakdown.processingFeeOnline}</span>
-                      </div>
-                      <div className="flex justify-between font-medium">
-                        <span>Total (online)</span>
-                        <span>${breakdown.totalOnline}</span>
+                        <span>Paid before</span>
+                        <span>{breakdown.paid_before} lei</span>
                       </div>
                       <div className="flex justify-between">
-                        <span>Total (bank transfer)</span>
-                        <span>${breakdown.totalBank}</span>
+                        <span>Total</span>
+                        <span>{breakdown.totalBank} lei</span>
                       </div>
                     </div>
+                    
+                  {/* <FieldGroup>
+                    <div>
+                      <Controller
+                        control={confirmForm.control}
+                        name="proof_of_payment"
+                        render={({ field }) => (
+                          <div>
+                            <Label>Proof of payment</Label>
+                            <FileInput {...field} />
+                          </div>
+                        )}
+                      />
+                    </div>
+                  </FieldGroup> */}
 
                     <div className="flex gap-3">
-                      <Button type="submit" disabled={!method}>Submit payment</Button>
+                      <Button type="submit">Submit payment</Button>
                     </div>
                   </div>
                 </form>
@@ -593,8 +516,7 @@ export default function PaymentFlow() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="text-sm text-muted-foreground">
-                Your payment has been submitted successfully. Please check if an email with the transaction details is
-                sent to your email account. We will verify your payment shortly.
+                Your payment has been submitted successfully. We will verify your payment shortly.
               </div>
 
                 <ItemGroup>
@@ -617,7 +539,7 @@ export default function PaymentFlow() {
                       )}
                       {savedConfirmation.transaction_number && (
                       <div className="break-words">
-                        <span className="text-muted-foreground">Transaction number:</span>{" "}
+                        <span className="text-muted-foreground">Transaction/Reference number:</span>{" "}
                         {savedConfirmation.transaction_number}
                       </div>
                       )}

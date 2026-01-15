@@ -12,7 +12,6 @@ export const registrationDetailSchema = z.object({
 export type RegistrationDetailValues = z.infer<typeof registrationDetailSchema>;
 
 export const paymentConfirmationSchema = z.object({
-  payment_method: z.string().min(1, "Payment method is required"),
   transaction_number: z.string(),
   order_number: z.string().optional(),
   need_invoice: z.boolean().optional(),

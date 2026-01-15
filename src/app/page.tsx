@@ -1,4 +1,4 @@
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContentFirst } from '@/components/ui/card'
 
 export default function Page() {
   return (
@@ -7,9 +7,9 @@ export default function Page() {
         <h1 className='text-xl font-semibold'>Dashboard</h1>
       </div>
       <Card>
-        <CardContent>
+        <CardContentFirst>
           <p>Welcome. Use the sidebar to manage your registration.</p>
-        </CardContent>
+        </CardContentFirst>
       </Card>
     </div>
   )

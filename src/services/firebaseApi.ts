@@ -391,7 +391,6 @@ export type AdminPaymentRow = {
   totalOnline?: number
   totalBank?: number
   processingFeeOnline?: number
-  payment_method?: string
 }
 
 export const adminListPaymentsDetailed = async (): Promise<AdminPaymentRow[]> => {
@@ -413,7 +412,6 @@ export const adminListPaymentsDetailed = async (): Promise<AdminPaymentRow[]> =>
         totalOnline: totals?.totalOnline,
         totalBank: totals?.totalBank,
         processingFeeOnline: totals?.processingFeeOnline,
-        payment_method: confirmation?.payment_method,
       }
     })
     .sort((a, b) => a.country_name.localeCompare(b.country_name))

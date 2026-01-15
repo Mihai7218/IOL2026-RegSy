@@ -34,8 +34,6 @@ import { ChevronLeft, ChevronRight } from "lucide-react"
 import Images from "next/image"
 import { toast } from "sonner"
 
-type PaymentMethodOption = "Online Payment Platform" | "Direct Bank Transfer"
-
 export default function PaymentFlow() {
   const { claims } = useAuth()
   const [step, setStep] = useState<PaymentStep>(PaymentStep.RegistrationDetail)
@@ -67,11 +65,9 @@ export default function PaymentFlow() {
 
   // Step 2 form
   const [ack, setAck] = useState(false)
-  const [method, setMethod] = useState<PaymentMethodOption | undefined>(undefined)
   const confirmForm = useForm<PaymentConfirmationValues>({
     resolver: zodResolver(paymentConfirmationSchema),
     defaultValues: {
-      payment_method: "",
       transaction_number: "",
       order_number: "",
       need_invoice: false,
@@ -398,7 +394,7 @@ export default function PaymentFlow() {
 
       {step === PaymentStep.PaymentConfirmation && (
         <section className="space-y-6">
-          <h2 className="text-base font-semibold">Please choose the payment method with descriptions below</h2>
+          <h2 className="text-base font-semibold">Please follow the payment instructions below.</h2>
 
           {/* Consent checkbox */}
           <label className="flex items-center gap-2 text-sm">
@@ -415,6 +411,29 @@ export default function PaymentFlow() {
                     onSubmitConfirmation(v)
                   })}
                 >
+
+                  {/* Instructions */}
+                  <Card className="border-dashed">
+                    <CardHeader>
+                      <CardTitle className="text-sm">Payment instructions</CardTitle>
+                    </CardHeader>
+                    <CardContent className="text-sm text-muted-foreground">
+                      <div className="space-y-1">
+                        <p>Transfer the total amount to the following bank account:</p>
+                        <ul className="list-disc pl-6">
+                          <li>Beneficiary: ASOCIAȚIA ALUMNI A UNIVERSITĂȚII DIN BUCUREȘTI</li>
+                          <li>Address: B-dul Regina Elisabeta, nr. 4-12,et. Subsol, Ap.Sala M 6, Bucureşti, Sector 3</li>
+                          <li>IBAN: RO52BRDE410SV57544994100</li>
+                          <li>CUI: 29223620</li>
+                          <li>Bank: BRD, Compozitorilor Branch</li>
+                          <li>SWIFT: BRDEROBU</li>
+                        </ul>
+                        <p>Include your country/team name in the transfer remark. Keep the transaction/reference number.</p>
+                        <p className="font-semibold">Please ensure that you cover all transaction fees.</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+
                   <FieldGroup>
                     <div>
                       <Controller
@@ -442,28 +461,6 @@ export default function PaymentFlow() {
                       )}
                     />
                   </div>
-
-                  {/* Instructions */}
-                  <Card className="border-dashed">
-                    <CardHeader>
-                      <CardTitle className="text-sm">Payment instructions</CardTitle>
-                    </CardHeader>
-                    <CardContent className="text-sm text-muted-foreground">
-                      <div className="space-y-1">
-                        <p>Transfer the total amount to the following bank account:</p>
-                        <ul className="list-disc pl-6">
-                          <li>Beneficiary: ASOCIAȚIA ALUMNI A UNIVERSITĂȚII DIN BUCUREȘTI</li>
-                          <li>Address: B-dul Regina Elisabeta, nr. 4-12,et. Subsol, Ap.Sala M 6, Bucureşti, Sector 3</li>
-                          <li>IBAN: RO52BRDE410SV57544994100</li>
-                          <li>CUI: 29223620</li>
-                          <li>Bank: BRD, Compozitorilor Branch</li>
-                          <li>SWIFT: BRDEROBU</li>
-                        </ul>
-                        <p>Include your country/team name in the transfer remark. Keep the transaction/reference number.</p>
-                        <p className="font-semibold">Please ensure that you cover all transaction fees.</p>
-                      </div>
-                    </CardContent>
-                  </Card>
 
                   <div className="space-y-3">
                     {/* Show totals with and without processing fee */}
@@ -527,10 +524,6 @@ export default function PaymentFlow() {
                   <ItemContent>
                     {savedRegistration && savedConfirmation ? (
                     <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                      <div className="break-words">
-                      <span className="text-muted-foreground">Payment method:</span>{" "}
-                      {savedConfirmation.payment_method}
-                      </div>
                       {savedConfirmation.order_number && (
                       <div className="break-words">
                         <span className="text-muted-foreground">Order number:</span>{" "}

@@ -5,7 +5,7 @@ import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore"
 // Persist registration details for the current country user under /countries/{uid}/payment
 export async function saveRegistrationDetails(
 	data: RegistrationDetailValues,
-	totals: { subtotal: number; processingFeeOnline: number; totalOnline: number; totalBank: number },
+	totals: { subtotal: number; totalBank: number },
 	step: number,
 ): Promise<void> {
 	const user = auth.currentUser
@@ -25,8 +25,6 @@ export async function saveRegistrationDetails(
 				},
 				pricing: {
 					subtotal: totals.subtotal,
-					processingFeeOnline: totals.processingFeeOnline,
-					totalOnline: totals.totalOnline,
 					totalBank: totals.totalBank,
 				},
 				step,
@@ -41,7 +39,7 @@ export async function saveRegistrationDetails(
 // Persist payment confirmation info and step under /countries/{uid}/payment
 export async function submitPaymentConfirmation(
 	data: PaymentConfirmationValues,
-	totals: { subtotal: number; processingFeeOnline: number; totalOnline: number; totalBank: number },
+	totals: { subtotal: number; totalBank: number },
 	step: number,
 ): Promise<void> {
 	const user = auth.currentUser
@@ -61,8 +59,6 @@ export async function submitPaymentConfirmation(
 				},
 				pricing: {
 					subtotal: totals.subtotal,
-					processingFeeOnline: totals.processingFeeOnline,
-					totalOnline: totals.totalOnline,
 					totalBank: totals.totalBank,
 				},
 				step,

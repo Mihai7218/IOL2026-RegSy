@@ -152,7 +152,8 @@ export const DEFAULT_PREVIOUS_HOSTS = [
     "LVA",
     "IMN",
     "BRA",
-    "TWN"
+    "TWN",
+    "TEST3",
   ]
 
   export const DEFAULT_ACCREDITED = [
@@ -200,4 +201,6 @@ export const DEFAULT_PREVIOUS_HOSTS = [
     "USA",
     "ESP",
     "CHN",
+    "TEST2",
+    "TEST3",
   ]

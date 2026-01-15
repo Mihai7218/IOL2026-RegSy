@@ -28,25 +28,29 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
 
       if (u) {
         // Derive claims from Firestore instead of legacy custom claims
-        try {
-          let nextClaims: Claims = {}
+        let nextClaims: Claims = {}
 
+        try {
           const adminDoc = await getDoc(doc(db, 'admins', u.uid))
           if (adminDoc.exists()) {
             nextClaims.admin = true
           }
+        } catch (e) {
+          console.error('AuthProvider: Failed to check admin status', e)
+        }
 
+        try {
           const countryDoc = await getDoc(doc(db, 'countries', u.uid))
           if (countryDoc.exists()) {
+            const countryData = countryDoc.data()
             nextClaims.country = true
-            nextClaims.countryKey = countryDoc.data().country_name
+            nextClaims.countryKey = countryData.country_code
           }
-
-          setClaims(nextClaims)
         } catch (e) {
-          console.error('Failed to resolve claims from Firestore', e)
-          setClaims(undefined)
+          console.error('AuthProvider: Failed to check country status', e)
         }
+
+        setClaims(nextClaims)
       } else {
         setClaims(undefined)
       }

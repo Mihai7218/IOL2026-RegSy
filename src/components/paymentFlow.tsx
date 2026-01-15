@@ -122,6 +122,14 @@ export default function PaymentFlow() {
     regForm.setValue("country_status", fixedCountryStatus)
   }, [fixedPlan, fixedCountryStatus, regForm])
 
+  // Update country status when claims change
+  useEffect(() => {
+    if (claims?.countryKey) {
+      const newStatus = decideCountryStatus(claims.countryKey)
+      regForm.setValue("country_status", newStatus)
+    }
+  }, [claims?.countryKey, regForm])
+
   // Load any existing payment state so user resumes from last step
   useEffect(() => {
     ;(async () => {

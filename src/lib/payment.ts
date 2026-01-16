@@ -68,12 +68,12 @@ export function computeFirstTeamFee(detail: Pick<RegistrationDetailValues, "plan
     const base = BASE_FIRST_TEAM_BY_PLAN["regular"][detail.country_status]
     const monthsLate = computeMonthsLate()
     const lateSurchargePerTeam = 1000 * monthsLate
-    return round2(base + lateSurchargePerTeam)
+    return [round2(base + lateSurchargePerTeam), monthsLate]
   }
 
   const fee = FIRST_TEAM_FEE_MATRIX[detail.plan as Exclude<Plan, "late">]?.[detail.country_status]
   const fallback = BASE_FIRST_TEAM_BY_PLAN[detail.plan][detail.country_status]
-  return round2(fee ?? fallback)
+  return [round2(fee ?? fallback), 0]
 }
 
 // Compute whole months late based on current date and the regular deadline.
@@ -82,16 +82,21 @@ function computeMonthsLate(now = new Date(), regularEndOverride?: Date): number 
   const regularEnd = regularEndOverride ?? new Date("2026-04-30T23:59:59Z")
   if (now <= regularEnd) return 0
 
-  const msPerMonthApprox = 30 * 24 * 60 * 60 * 1000
+  const msPerMonthApprox = 31 * 24 * 60 * 60 * 1000
   const diffMs = now.getTime() - regularEnd.getTime()
   const rawMonths = diffMs / msPerMonthApprox
   const rounded = Math.round(rawMonths)
   return Math.max(1, rounded)
 }
 
+function subtract1k(detail: RegistrationDetailValues, monthsLate: number): number {
+  if (detail.plan !== "late" || detail.number_of_teams < 2) return 0
+  return 1000 * monthsLate
+}
+
 export function calculatePricing(detail: RegistrationDetailValues): PriceBreakdown {
-  const firstTeam = computeFirstTeamFee(detail)
-  const teamsCost = firstTeam * (detail.number_of_teams === 2 ? 3 : 1)
+  const [firstTeam, monthsLate] = computeFirstTeamFee(detail)
+  const teamsCost = firstTeam * (detail.number_of_teams === 2 ? 3 : 1) - subtract1k(detail, monthsLate)
   const observersCost = detail.additional_observers * PRICING.observerFee
   const singleRoomsCost = detail.single_room_requests * PRICING.singleRoomFee
   const subtotal = teamsCost + observersCost + singleRoomsCost

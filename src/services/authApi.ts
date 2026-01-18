@@ -121,12 +121,37 @@ export async function loginWithEmail(
 }
 
 export async function loginWithGoogle(): Promise<AuthResult<User>> {
+  let user: User | null = null;
+
   try {
     const cred = await signInWithPopup(auth, provider as GoogleAuthProvider);
-    const user = cred.user;
+    user = cred.user;
+    const authUid = user.uid;
+
+    // Check if this is a new user by seeing if a countries document exists
+    const countryRef = doc(db, "countries", authUid);
+    const countrySnap = await getDoc(countryRef);
+    const isNewUser = !countrySnap.exists();
+
+    // If new user, they must use the Register tab with an invitation code
+    if (isNewUser) {
+      // Clean up the created user account
+      await deleteUser(user);
+      return fail(
+        "InvalidInvitation",
+        "New accounts must be created using the Register tab with a valid invitation code."
+      );
+    }
 
     return { ok: true, data: user };
   } catch (error) {
+    if (user) {
+      try {
+        await deleteUser(user);
+      } catch {
+        // ignore cleanup failures
+      }
+    }
     const mapped = mapAuthError(error);
     return fail(mapped.code, mapped.message);
   }

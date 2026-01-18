@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const registrationDetailSchema = z.object({
   plan: z.enum(["early bird", "regular", "late"]),
-  country_status: z.enum(["Previous Host", "Not a Previous Host", "Not accredited"]),
+  country_status: z.enum(["Previous Host", "Future Host", "Not a Previous Host", "Not accredited"]),
   number_of_teams: z.number().int().min(1).max(2),
   additional_observers: z.number().int().min(0),
   single_room_requests: z.number().int().min(0),

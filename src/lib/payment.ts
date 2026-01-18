@@ -13,17 +13,20 @@ export const BASE_FIRST_TEAM_BY_PLAN: Record<
   "early bird": {
     "Not accredited": 18360,
     "Not a Previous Host": 9180,
+    "Future Host": 9180,
     "Previous Host": 8160,
   },
   regular: {
     "Not accredited": 20400,
     "Not a Previous Host": 10200,
+    "Future Host": 10200,
     "Previous Host": 9180,
   },
   // Late base is defined via a formula; this value is only used as a fallback.
   late: {
     "Not accredited": 20400,
     "Not a Previous Host": 10200,
+    "Future Host": 10200,
     "Previous Host": 9180,
   },
 }
@@ -36,11 +39,13 @@ export const FIRST_TEAM_FEE_MATRIX: Record<
   "early bird": {
     "Not accredited": 18360,
     "Not a Previous Host": 9180,
+    "Future Host": 9180,
     "Previous Host": 8160,
   },
   regular: {
     "Not accredited": 20400,
     "Not a Previous Host": 10200,
+    "Future Host": 10200,
     "Previous Host": 9180,
   },
 }
@@ -97,7 +102,7 @@ function subtract1k(detail: RegistrationDetailValues, monthsLate: number): numbe
 export function calculatePricing(detail: RegistrationDetailValues): PriceBreakdown {
   const [firstTeam, monthsLate] = computeFirstTeamFee(detail)
   const teamsCost = firstTeam * (detail.number_of_teams === 2 ? 3 : 1) - subtract1k(detail, monthsLate)
-  const observersCost = detail.additional_observers * PRICING.observerFee
+  const observersCost = (detail.additional_observers - (detail.country_status === "Future Host" ? 1 : 0)) * PRICING.observerFee
   const singleRoomsCost = detail.single_room_requests * PRICING.singleRoomFee
   const subtotal = teamsCost + observersCost + singleRoomsCost
   const paid_before = detail.paid_before
@@ -133,6 +138,7 @@ export function decidePlan(now = new Date(), windows?: { earlyEnd: Date; regular
 export function decideCountryStatus(countryKey?: string, previousHosts?: string[]): RegistrationDetailValues["country_status"] {
   const list = previousHosts ?? DEFAULT_PREVIOUS_HOSTS
   const accredited = DEFAULT_ACCREDITED
+  if (countryKey === FUTURE_HOST) return "Future Host"
   return countryKey && accredited.includes(countryKey) ? (list.includes(countryKey)
     ? "Previous Host"
     : "Not a Previous Host") 
@@ -209,3 +215,5 @@ export const DEFAULT_PREVIOUS_HOSTS = [
     "TEST2",
     "TEST3",
   ]
+
+  export const FUTURE_HOST = "THA"

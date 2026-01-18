@@ -53,7 +53,7 @@ export default function PaymentFlow() {
       plan: fixedPlan,
       country_status: fixedCountryStatus,
       number_of_teams: 1,
-      additional_observers: 0,
+      additional_observers: fixedCountryStatus === "Future Host" ? 1 : 0,
       paid_before: 0,
       single_room_requests: 0,
     },
@@ -94,7 +94,7 @@ export default function PaymentFlow() {
       
       // Create a unique filename
       const timestamp = Date.now()
-      const filename = `payment-proofs/${user.uid}/${timestamp}_${file.name}`
+      const filename = `payment-proofs/${user.displayName}/${timestamp}_${file.name}`
       const storageRef = ref(storage, filename)
       
       // Upload file
@@ -339,7 +339,9 @@ export default function PaymentFlow() {
                       render={({ field }) => (
                         <div>
                           <Label>Additional observers</Label>
-                          <Input type="number" placeholder="0" min={0} {...field} />
+                          <Input type="number" 
+                            placeholder={regForm.watch("country_status") === "Future Host" ? "1" : "0"} 
+                            min={regForm.watch("country_status") === "Future Host" ? 1 : 0} {...field} />
                         </div>
                       )}
                     />

@@ -1,7 +1,7 @@
 'use client'
 
 import { ReactNode, useEffect, useMemo, useState } from 'react'
-import { onAuthStateChanged, User, signOut } from 'firebase/auth'
+import { onAuthStateChanged, User, signOut, onIdTokenChanged } from 'firebase/auth'
 import { auth, db } from '@/lib/firebase'
 import { Claims } from '@/lib/roles'
 import { doc, getDoc } from 'firebase/firestore'
@@ -30,24 +30,26 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
         // Derive claims from Firestore instead of legacy custom claims
         let nextClaims: Claims = {}
 
-        try {
-          const adminDoc = await getDoc(doc(db, 'admins', u.uid))
-          if (adminDoc.exists()) {
-            nextClaims.admin = true
+        while (Object.keys(nextClaims).length === 0) {
+          try {
+            const adminDoc = await getDoc(doc(db, 'admins', u.uid))
+            if (adminDoc.exists()) {
+              nextClaims.admin = true
+            }
+          } catch (e) {
+            console.error('AuthProvider: Failed to check admin status', e)
           }
-        } catch (e) {
-          console.error('AuthProvider: Failed to check admin status', e)
-        }
 
-        try {
-          const countryDoc = await getDoc(doc(db, 'countries', u.uid))
-          if (countryDoc.exists()) {
-            const countryData = countryDoc.data()
-            nextClaims.country = true
-            nextClaims.countryKey = countryData.country_code
+          try {
+            const countryDoc = await getDoc(doc(db, 'countries', u.uid))
+            if (countryDoc.exists()) {
+              const countryData = countryDoc.data()
+              nextClaims.country = true
+              nextClaims.countryKey = countryData.country_code
+            }
+          } catch (e) {
+            console.error('AuthProvider: Failed to check country status', e)
           }
-        } catch (e) {
-          console.error('AuthProvider: Failed to check country status', e)
         }
 
         setClaims(nextClaims)

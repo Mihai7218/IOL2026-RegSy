@@ -189,6 +189,11 @@ type RegisterPanelProps = {
   onSuccess: (countryName?: string) => void;
 };
 
+function convertToUndefined(v : string | null) : string | undefined {
+  if (v === null) return undefined
+  return v
+}
+
 function RegisterPanel({ onSuccess }: RegisterPanelProps) {
   const form = useForm<RegisterValues>({
     resolver: zodResolver(registerSchema),
@@ -213,7 +218,7 @@ function RegisterPanel({ onSuccess }: RegisterPanelProps) {
       return;
     }
 
-  onSuccess(result.data.country.country_name);
+  onSuccess(convertToUndefined(result.data.user.displayName));
   }
 
   async function handleGoogleRegister() {
@@ -231,7 +236,7 @@ function RegisterPanel({ onSuccess }: RegisterPanelProps) {
       return;
     }
 
-  onSuccess(result.data.country.country_name);
+  onSuccess(convertToUndefined(result.data.user.displayName));
   }
 
   return (

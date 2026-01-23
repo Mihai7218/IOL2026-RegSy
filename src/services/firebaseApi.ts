@@ -548,9 +548,8 @@ function generateCode(length = 8): string {
   return result
 }
 
-export const createInviteCode = async (
-  _country_code: string,
-  _country_name: string,
+const createInviteCode = async (
+  data: any,
 ): Promise<{ code: string; created_at: string }> => {
   const user = auth.currentUser
   if (!user) throw new Error('Not authenticated')
@@ -560,8 +559,7 @@ export const createInviteCode = async (
   const created_at = serverTimestamp()
 
   await setDoc(ref, {
-    country_code: _country_code,
-    country_name: _country_name,
+    ...data,
     created_at,
     created_by: user.uid,
     used: false,
@@ -571,4 +569,24 @@ export const createInviteCode = async (
 
   // created_at is a Firestore Timestamp in the database; here we just echo an ISO string for immediate UI use.
   return { code, created_at: new Date().toISOString() }
+}
+
+export const createCountryInviteCode = async (
+  _country_code: string,
+  _country_name: string,
+): Promise<{ code: string; created_at: string }> => {
+  return createInviteCode({
+    country_code: _country_code,
+    country_name: _country_name,
+  })
+}
+
+export const createJuryMemberInviteCode = async (
+  _jury_member_code: string,
+  _jury_member_name: string,
+): Promise<{ code: string; created_at: string }> => {
+  return createInviteCode({
+    jury_member_code: _jury_member_code,
+    jury_member_name: _jury_member_name,
+  })
 }

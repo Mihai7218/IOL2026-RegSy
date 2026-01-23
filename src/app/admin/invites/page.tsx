@@ -7,19 +7,26 @@ import { Button } from '@/components/ui/button'
 import { useAuth } from '@/context/AuthProvider'
 import { isAdmin } from '@/lib/roles'
 import { useState } from 'react'
-import { createInviteCode } from '@/services/firebaseApi'
+import { createCountryInviteCode, createJuryMemberInviteCode } from '@/services/firebaseApi'
 
 export default function InvitesPage() {
   const { claims } = useAuth()
   const [countryKey, setCountryKey] = useState('')
   const [countryName, setCountryName] = useState('')
-  const [result, setResult] = useState<{ code: string; created_at: string } | null>(null)
+  const [juryMemberCode, setJuryMemberCode] = useState('')
+  const [juryMemberName, setJuryMemberName] = useState('')
+  const [resultCountry, setResultCountry] = useState<{ code: string; created_at: string } | null>(null)
+  const [resultJury, setResultJury] = useState<{ code: string; created_at: string } | null>(null)
 
   if (!isAdmin(claims)) return <p className='px-10 py-8 text-sm text-muted-foreground'>Admin only.</p>
 
-  const create = async () => {
-  const r = await createInviteCode(countryKey, countryName)
-    setResult(r)
+  const createCountry = async () => {
+  const r = await createCountryInviteCode(countryKey, countryName)
+    setResultCountry(r)
+  }
+  const createJuryMember = async () => {
+  const r = await createJuryMemberInviteCode(juryMemberCode, juryMemberName)
+    setResultJury(r)
   }
 
   return (
@@ -29,15 +36,30 @@ export default function InvitesPage() {
       </div>
       <Card>
         <CardContent className='space-y-3'>
+          <h1>New Country</h1>
           <div className='grid grid-cols-2 gap-4'>
             <div><Label>Country Key</Label><Input value={countryKey} onChange={e => setCountryKey(e.target.value)} /></div>
             <div><Label>Country Name</Label><Input value={countryName} onChange={e => setCountryName(e.target.value)} /></div>
           </div>
-          <Button type='button' onClick={create}>Create</Button>
-          {result && (
+          <Button type='button' onClick={createCountry}>Create</Button>
+          {resultCountry && (
             <div className='text-sm'>
-              Code: <code>{result.code}</code> Created:{' '}
-              {new Date(result.created_at).toLocaleString()}
+              Code: <code>{resultCountry.code}</code> Created:{' '}
+              {new Date(resultCountry.created_at).toLocaleString()}
+            </div>
+          )}
+        </CardContent>
+        <CardContent className='space-y-3'>
+          <h1>New Jury Member</h1>
+          <div className='grid grid-cols-2 gap-4'>
+            <div><Label>Jury Member Code</Label><Input value={juryMemberCode} onChange={e => setJuryMemberCode(e.target.value)} /></div>
+            <div><Label>Jury Member Name</Label><Input value={juryMemberName} onChange={e => setJuryMemberName(e.target.value)} /></div>
+          </div>
+          <Button type='button' onClick={createJuryMember}>Create</Button>
+          {resultJury && (
+            <div className='text-sm'>
+              Code: <code>{resultJury.code}</code> Created:{' '}
+              {new Date(resultJury.created_at).toLocaleString()}
             </div>
           )}
         </CardContent>

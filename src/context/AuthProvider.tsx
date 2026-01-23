@@ -50,6 +50,33 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
           } catch (e) {
             console.error('AuthProvider: Failed to check country status', e)
           }
+
+          try {
+            const juryDoc = await getDoc(doc(db, 'juryMembers', u.uid))
+            if (juryDoc.exists()) {
+              nextClaims.juryMember = true
+            }
+          } catch (e) {
+            console.error('AuthProvider: Failed to check jury member status', e)
+          }
+
+          try {
+            const volunteerDoc = await getDoc(doc(db, 'volunteers', u.uid))
+            if (volunteerDoc.exists()) {
+              nextClaims.volunteer = true
+            }
+          } catch (e) {
+            console.error('AuthProvider: Failed to check volunteer status', e)
+          }
+
+          try {
+            const locDoc = await getDoc(doc(db, 'locMember', u.uid))
+            if (locDoc.exists()) {
+              nextClaims.locMember = true
+            }
+          } catch (e) {
+            console.error('AuthProvider: Failed to check LOC member status', e)
+          }
         }
 
         setClaims(nextClaims)

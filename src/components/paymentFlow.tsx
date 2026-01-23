@@ -287,7 +287,7 @@ export default function PaymentFlow() {
         <div className="grid grid-cols-1">
             <div className="rounded-md border">
                 <Images
-                    src="/images/misc/prices_general.png"
+                    src="/images/misc/prices.png"
                     width={2880} height={585}
                     alt="Pricing general"
                     className="w-full h-full"

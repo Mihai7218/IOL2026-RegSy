@@ -22,29 +22,7 @@ export const paymentConfirmationSchema = z.object({
   transaction_number: z.string().min(1, 'Transaction number is required'),
   order_number: z.string().optional(),
   need_invoice: z.boolean().optional(),
-  invoice_data: z.object({
-    entity_name: z.string().optional(),
-    address: z.string().optional(),
-  }).optional(),
   proof_of_payment_url: z.string().min(1, 'Proof of payment is required'),
-}).superRefine((val, ctx) => {
-  // If need_invoice is true, invoice_data must be provided with entity_name and address
-  if (val.need_invoice) {
-    if (!val.invoice_data?.entity_name?.trim()) {
-      ctx.addIssue({
-        code: 'custom',
-        message: 'Entity name is required when invoice is needed',
-        path: ['invoice_data', 'entity_name'],
-      })
-    }
-    if (!val.invoice_data?.address?.trim()) {
-      ctx.addIssue({
-        code: 'custom',
-        message: 'Address is required when invoice is needed',
-        path: ['invoice_data', 'address'],
-      })
-    }
-  }
 });
 
 export type PaymentConfirmationValues = z.infer<typeof paymentConfirmationSchema>;

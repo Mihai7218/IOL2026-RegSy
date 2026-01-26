@@ -11,7 +11,7 @@ import {
   PaymentStep,
 } from "@/schemas/payment"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardContentFirst, CardHeader, CardTitle } from "@/components/ui/card"
 import { FieldGroup, FieldLabel, FieldError } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -73,10 +73,6 @@ export default function PaymentFlow() {
       transaction_number: "",
       order_number: "",
       need_invoice: false,
-      invoice_data: {
-        entity_name: "",
-        address: "",
-      },
       proof_of_payment_url: "",
     },
   })
@@ -559,34 +555,20 @@ export default function PaymentFlow() {
                   </div>
 
                   {confirmForm.watch('need_invoice') && (
-                    <FieldGroup>
-                      <Controller
-                        control={confirmForm.control}
-                        name="invoice_data.entity_name"
-                        render={({ field }) => (
-                          <div>
-                            <Label>Entity name *</Label>
-                            <Input placeholder="Enter entity name" {...field} />
-                            {confirmForm.formState.errors.invoice_data?.entity_name && (
-                              <FieldError errors={[confirmForm.formState.errors.invoice_data.entity_name]} />
-                            )}
-                          </div>
-                        )}
-                      />
-                      <Controller
-                        control={confirmForm.control}
-                        name="invoice_data.address"
-                        render={({ field }) => (
-                          <div>
-                            <Label>Address *</Label>
-                            <Input placeholder="Enter address" {...field} />
-                            {confirmForm.formState.errors.invoice_data?.address && (
-                              <FieldError errors={[confirmForm.formState.errors.invoice_data.address]} />
-                            )}
-                          </div>
-                        )}
-                      />
-                    </FieldGroup>
+                    <Card>
+                      <CardContentFirst className="text-sm text-muted-foreground">
+                        <div className="space-y-1">
+                          If you require an invoice, please send an email to <a href="mailto:iol2026ro@gmail.com">iol2026ro@gmail.com</a> with the following details:
+                          <ul className="list-disc pl-6">
+                            <li>Name of the institution</li>
+                            <li>Full postal address (street, number, zipcode, city)</li>
+                            <li>Tax number</li>
+                            <li>Phone number</li>
+                            <li>Person who should receive the invoice</li>
+                          </ul>
+                        </div>
+                      </CardContentFirst>
+                    </Card>
                   )}
 
                     <div className="flex gap-3">
@@ -635,22 +617,6 @@ export default function PaymentFlow() {
                       <span className="text-muted-foreground">Need invoice:</span>{" "}
                       {savedConfirmation.need_invoice ? "Yes" : "No"}
                       </div>
-                      {savedConfirmation.need_invoice && savedConfirmation.invoice_data && (
-                        <>
-                          {savedConfirmation.invoice_data.entity_name && (
-                            <div className="break-words">
-                              <span className="text-muted-foreground">Entity name:</span>{" "}
-                              {savedConfirmation.invoice_data.entity_name}
-                            </div>
-                          )}
-                          {savedConfirmation.invoice_data.address && (
-                            <div className="break-words">
-                              <span className="text-muted-foreground">Address:</span>{" "}
-                              {savedConfirmation.invoice_data.address}
-                            </div>
-                          )}
-                        </>
-                      )}
                       {savedConfirmation.proof_of_payment_url && (
                         <div className="break-words col-span-2">
                           <span className="text-muted-foreground">Proof of payment:</span>{" "}

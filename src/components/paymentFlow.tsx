@@ -90,7 +90,7 @@ export default function PaymentFlow() {
       
       // Create a unique filename
       const timestamp = Date.now()
-      const filename = `payment-proofs/${user.displayName}/${timestamp}_${file.name}`
+      const filename = `payment-proofs/${user.uid}/${timestamp}_${file.name}`
       const storageRef = ref(storage, filename)
       
       // Upload file

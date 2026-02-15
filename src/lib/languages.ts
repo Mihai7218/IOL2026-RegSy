@@ -1,6 +1,8 @@
 export type Language = { name: string; code: string; official_name: string }
 
 export const languages: Language[] = [
+  { name: 'Arabic', code: 'ar', official_name: 'العربية' },
+  // { name: 'Azerbaijani', code: 'az', official_name: 'Azərbaycan dili' },
   { name: 'Bulgarian', code: 'bg', official_name: 'български' },
   { name: 'Chinese (simplified)', code: 'zh-CN', official_name: '简体中文' },
   { name: 'Chinese (traditional)', code: 'zh-TW', official_name: '繁體中文' },
@@ -12,10 +14,16 @@ export const languages: Language[] = [
   { name: 'Finnish', code: 'fi', official_name: 'suomi' },
   { name: 'French', code: 'fr', official_name: 'français' },
   { name: 'German', code: 'de', official_name: 'Deutsch' },
+  { name: 'Greek', code: 'el', official_name: 'Ελληνικά' },
+  { name: 'Hebrew', code: 'he', official_name: 'עִבְרִית' },
   { name: 'Hungarian', code: 'hu', official_name: 'magyar' },
   { name: 'Japanese', code: 'ja', official_name: '日本語' },
+  { name: 'Kazakh', code: 'kk', official_name: 'қазақ тілі' },
   { name: 'Korean', code: 'ko', official_name: '한국어' },
   { name: 'Latvian', code: 'lv', official_name: 'latviešu' },
+  { name: 'Malay', code: 'ms', official_name: 'bahasa Melayu' },
+  //{ name: 'Nepali', code: 'ne', official_name: 'नेपाली' },
+  { name: 'Persian', code: 'fa', official_name: 'فارسی' },
   { name: 'Polish', code: 'pl', official_name: 'polski' },
   { name: 'Portuguese (Brazilian)', code: 'pt-BR', official_name: 'português (Brasil)' },
   { name: 'Romanian', code: 'ro', official_name: 'română' },
@@ -26,9 +34,4 @@ export const languages: Language[] = [
   { name: 'Thai', code: 'th', official_name: 'ไทย' },
   { name: 'Turkish', code: 'tr', official_name: 'Türkçe' },
   { name: 'Ukrainian', code: 'uk', official_name: 'українська' },
-  { name: 'Greek', code: 'el', official_name: 'Ελληνικά' },
-  { name: 'Hebrew', code: 'he', official_name: 'עִבְרִית' },
-  { name: 'Kazakh', code: 'kk', official_name: 'қазақ тілі' },
-  { name: 'Nepali', code: 'ne', official_name: 'नेपाली' },
-  { name: 'Persian', code: 'fa', official_name: 'فارسی' },
 ]

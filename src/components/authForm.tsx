@@ -56,7 +56,7 @@ export function AuthForm() {
   const handleRegisterSuccess = (countryName?: string) => {
     toast.success(
       countryName
-        ? `Registration successful. Country: ${countryName}`
+        ? `Registration successful. Welcome, ${countryName}`
         : "Registration successful."
     );
     router.push("/");

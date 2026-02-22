@@ -101,12 +101,20 @@ export function AppSidebar() {
   const userUid = user?.uid ?? null
   const role = useMemo(() => (isAdmin(claims) ? "admin" : isCountry(claims) ? "country" : isJuryMember(claims) ? "jury" : "guest"), [claims, userUid])
 
+  function getName(data : any) : string {
+    switch (role) {
+      case "country": return typeof data?.country_name === "string" ? data.country_name : fallbackName
+      case "jury": return typeof data?.jury_member_name === "string" ? data.jury_member_name : fallbackName
+      default: return fallbackName
+    }
+  }
+
   function getData(ref : DocumentReference) {
     return onSnapshot(
         ref,
         (snap) => {
           const data = snap.data() as any
-          const name = typeof data?.name === "string" ? data.name : fallbackName
+          const name = getName(data)
           setCurrentUser({ name, email, role })
           setProfileLoading(false)
         },

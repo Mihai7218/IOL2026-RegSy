@@ -572,8 +572,8 @@ const createInviteCode = async (
 }
 
 export const createCountryInviteCode = async (
-  _country_code: string,
   _country_name: string,
+  _country_code: string,
 ): Promise<{ code: string; created_at: string }> => {
   return createInviteCode({
     country_code: _country_code,
@@ -582,8 +582,8 @@ export const createCountryInviteCode = async (
 }
 
 export const createJuryMemberInviteCode = async (
-  _jury_member_code: string,
   _jury_member_name: string,
+  _jury_member_code: string,
 ): Promise<{ code: string; created_at: string }> => {
   return createInviteCode({
     jury_member_code: _jury_member_code,
@@ -592,19 +592,19 @@ export const createJuryMemberInviteCode = async (
 }
 
 export const createVolunteerInviteCode = async (
-  _volunteer_invite_code: string,
+  _volunteer_name: string,
   _ignored: string,
 ): Promise<{ code: string; created_at: string }> => {
   return createInviteCode({
-    volunteer_name: _volunteer_invite_code,
+    volunteer_name: _volunteer_name,
   })
 }
 
 export const createLOCMemberInviteCode = async (
-  _loc_member_invite_code: string,
+  _loc_member_name: string,
   _ignored: string,
 ): Promise<{ code: string; created_at: string }> => {
   return createInviteCode({
-    loc_member_name: _loc_member_invite_code,
+    loc_member_name: _loc_member_name,
   })
 }

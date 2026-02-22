@@ -590,3 +590,21 @@ export const createJuryMemberInviteCode = async (
     jury_member_name: _jury_member_name,
   })
 }
+
+export const createVolunteerInviteCode = async (
+  _volunteer_invite_code: string,
+  _ignored: string,
+): Promise<{ code: string; created_at: string }> => {
+  return createInviteCode({
+    volunteer_name: _volunteer_invite_code,
+  })
+}
+
+export const createLOCMemberInviteCode = async (
+  _loc_member_invite_code: string,
+  _ignored: string,
+): Promise<{ code: string; created_at: string }> => {
+  return createInviteCode({
+    loc_member_name: _loc_member_invite_code,
+  })
+}

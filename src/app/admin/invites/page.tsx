@@ -2,31 +2,74 @@
 
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectTrigger, SelectValue, SelectItem } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/context/AuthProvider'
 import { isAdmin } from '@/lib/roles'
 import { useState } from 'react'
-import { createCountryInviteCode, createJuryMemberInviteCode } from '@/services/firebaseApi'
+import { createCountryInviteCode, createJuryMemberInviteCode, createLOCMemberInviteCode, createVolunteerInviteCode } from '@/services/firebaseApi'
 
 export default function InvitesPage() {
   const { claims } = useAuth()
-  const [countryKey, setCountryKey] = useState('')
-  const [countryName, setCountryName] = useState('')
-  const [juryMemberCode, setJuryMemberCode] = useState('')
-  const [juryMemberName, setJuryMemberName] = useState('')
-  const [resultCountry, setResultCountry] = useState<{ code: string; created_at: string } | null>(null)
-  const [resultJury, setResultJury] = useState<{ code: string; created_at: string } | null>(null)
+  const [userType, setUserType] = useState('')
+  const [code, setCode] = useState('')
+  const [name, setName] = useState('')
+  const [result, setResult] = useState<{ code: string; created_at: string } | null>(null)
 
   if (!isAdmin(claims)) return <p className='px-10 py-8 text-sm text-muted-foreground'>Admin only.</p>
 
-  const createCountry = async () => {
-  const r = await createCountryInviteCode(countryKey, countryName)
-    setResultCountry(r)
+  function create(role: string) { return async () => {
+      let createFun = (x : string, y : string) : Promise <{code: string, created_at: string}> => {return Promise.resolve({code: "failed", created_at: "never"})}
+      switch (role) {
+        case "Country":
+          createFun = createCountryInviteCode
+          break
+        case "Jury":
+          createFun = createJuryMemberInviteCode
+          break
+        case "Volunteer":
+          setCode("")
+          createFun = createVolunteerInviteCode
+          break
+        case "LOC":
+          setCode("")
+          createFun = createLOCMemberInviteCode
+          break
+      }
+      const r = await createFun(name, code)
+      setResult(r)
+    }
   }
-  const createJuryMember = async () => {
-  const r = await createJuryMemberInviteCode(juryMemberCode, juryMemberName)
-    setResultJury(r)
+  // const createVolunteer = async () => {
+  // const r = await createVolunteerInviteCode(juryMemberCode, juryMemberName)
+  //   setResult(r)
+  // }
+
+  function getField1(userType : string) : string {
+    switch (userType) {
+      case "Country":
+          return "Country Name"
+      case "Jury":
+          return "Jury Member Name"
+      case "Volunteer":
+          return "Volunteer Name"
+      case "LOC":
+          return "LOC Member Name"
+      default:
+        return "N/A"
+    }
+  }
+
+  function getField2(userType : string) : string {
+    switch (userType) {
+      case "Country":
+          return "Country Code"
+      case "Jury":
+          return "Jury Member Code"
+      default:
+        return "N/A"
+    }
   }
 
   return (
@@ -36,33 +79,32 @@ export default function InvitesPage() {
       </div>
       <Card>
         <CardContent className='space-y-3'>
-          <h1>New Country</h1>
+          <Label>Type of user</Label>
+          <Select value={userType} onValueChange={(v) => setUserType(v)}>
+            <SelectTrigger className="mt-1">
+              <SelectValue placeholder="Select" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Country">Country</SelectItem>
+              <SelectItem value="Jury">Jury Member</SelectItem>
+              <SelectItem value="Volunteer">Volunteer</SelectItem>
+              <SelectItem value="LOC">LOC Member</SelectItem>
+            </SelectContent>
+          </Select>
+        </CardContent>
+        {userType && <CardContent className='space-y-3'>
           <div className='grid grid-cols-2 gap-4'>
-            <div><Label>Country Key</Label><Input value={countryKey} onChange={e => setCountryKey(e.target.value)} /></div>
-            <div><Label>Country Name</Label><Input value={countryName} onChange={e => setCountryName(e.target.value)} /></div>
+            <div><Label>{getField1(userType)}</Label><Input value={name} onChange={e => setName(e.target.value)} /></div>
+            {(userType === "Country" || userType === "Jury") && <div><Label>{getField2(userType)}</Label><Input value={code} onChange={e => setCode(e.target.value)} /></div>}
           </div>
-          <Button type='button' onClick={createCountry}>Create</Button>
-          {resultCountry && (
+          <Button type='button' onClick={create(userType)}>Create</Button>
+          {result && (
             <div className='text-sm'>
-              Code: <code>{resultCountry.code}</code> Created:{' '}
-              {new Date(resultCountry.created_at).toLocaleString()}
+              Code: <code>{result.code}</code> Created:{' '}
+              {new Date(result.created_at).toLocaleString()}
             </div>
           )}
-        </CardContent>
-        <CardContent className='space-y-3'>
-          <h1>New Jury Member</h1>
-          <div className='grid grid-cols-2 gap-4'>
-            <div><Label>Jury Member Code</Label><Input value={juryMemberCode} onChange={e => setJuryMemberCode(e.target.value)} /></div>
-            <div><Label>Jury Member Name</Label><Input value={juryMemberName} onChange={e => setJuryMemberName(e.target.value)} /></div>
-          </div>
-          <Button type='button' onClick={createJuryMember}>Create</Button>
-          {resultJury && (
-            <div className='text-sm'>
-              Code: <code>{resultJury.code}</code> Created:{' '}
-              {new Date(resultJury.created_at).toLocaleString()}
-            </div>
-          )}
-        </CardContent>
+        </CardContent>}
       </Card>
     </div>
   )

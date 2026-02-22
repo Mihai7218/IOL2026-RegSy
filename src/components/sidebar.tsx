@@ -19,10 +19,10 @@ import { signOut } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { doc, onSnapshot } from "firebase/firestore";
+import { doc, DocumentReference, onSnapshot } from "firebase/firestore";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/context/AuthProvider";
-import { isAdmin } from "@/lib/roles";
+import { isAdmin, isCountry, isJuryMember } from "@/lib/roles";
 
 enum status {
   TIME_SENSITIVE = "Time Sensitive",
@@ -99,7 +99,24 @@ export function AppSidebar() {
   const fallbackName = useMemo(() => user?.displayName || user?.email || "User", [user?.displayName, user?.email])
   const email = user?.email || ""
   const userUid = user?.uid ?? null
-  const role = useMemo(() => (isAdmin(claims) ? "admin" : userUid ? "country" : "guest"), [claims, userUid])
+  const role = useMemo(() => (isAdmin(claims) ? "admin" : isCountry(claims) ? "country" : isJuryMember(claims) ? "jury" : "guest"), [claims, userUid])
+
+  function getData(ref : DocumentReference) {
+    return onSnapshot(
+        ref,
+        (snap) => {
+          const data = snap.data() as any
+          const name = typeof data?.name === "string" ? data.name : fallbackName
+          setCurrentUser({ name, email, role })
+          setProfileLoading(false)
+        },
+        (error) => {
+          console.error("Failed to load country profile for sidebar", error)
+          setCurrentUser({ name: fallbackName, email, role })
+          setProfileLoading(false)
+        },
+      )
+    }
 
   useEffect(() => {
     if (!userUid) {
@@ -114,26 +131,26 @@ export function AppSidebar() {
       return
     }
 
-    setProfileLoading(true)
-    const countryRef = doc(db, "countries", userUid)
-    const unsub = onSnapshot(
-      countryRef,
-      (snap) => {
-        const data = snap.data() as any
-        const name = typeof data?.country_name === "string" ? data.country_name : fallbackName
-        setCurrentUser({ name, email, role: "country" })
-        setProfileLoading(false)
-      },
-      (error) => {
-        console.error("Failed to load country profile for sidebar", error)
-        setCurrentUser({ name: fallbackName, email, role: "country" })
-        setProfileLoading(false)
-      },
-    )
+    if (role === "jury") {
+      setProfileLoading(true)
+      const juryRef = doc(db, "juryMembers", userUid)
+      const unsub = getData(juryRef)
 
-    return () => {
-      setProfileLoading(false)
-      unsub()
+      return () => {
+        setProfileLoading(false)
+        unsub()
+      }
+    }
+
+    if (role === "country") {
+      setProfileLoading(true)
+      const countryRef = doc(db, "countries", userUid)
+      const unsub = getData(countryRef)
+
+      return () => {
+        setProfileLoading(false)
+        unsub()
+      }
     }
   }, [userUid, role, fallbackName, email])
 

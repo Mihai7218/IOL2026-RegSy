@@ -78,7 +78,7 @@ const menuItems = [
         status: status.TIME_SENSITIVE,
         label: "Members",
         href: "/members",
-        visible: ["admin"],
+        visible: ["admin", "jury"],
       },
       {
         icon: Plane,

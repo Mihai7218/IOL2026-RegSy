@@ -121,15 +121,19 @@ export type Member = {
   preferred_name: string
   gender: string
   other_gender?: string
+  acco_req?: string
   date_of_birth: string
   tshirt_size: string
   indiv_language?: string
   indiv_contest_req?: string
+  document_type?: string
   passport_number?: string
   issue_date?: string
   expiry_date?: string
+  issuing_country?: string
+  nationality?: string
   food_req?: string[]
-  other_food_req?: string
+  food_allergies?: string
   excursion_route?: string
   city_tour?: string
 }

@@ -3,7 +3,7 @@
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { useEffect, useMemo, useState } from 'react'
+import { Dispatch, SetStateAction, useEffect, useMemo, useState } from 'react'
 
 import { memberFormSchema, type MemberForm as MemberSchemaForm } from '@/schemas/member'
 import { Button } from '@/components/ui/button'
@@ -17,25 +17,35 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { languages } from '@/lib/languages'
 import { cityTourOptions } from '@/lib/cityTour'
 import { excursionOptions } from '@/lib/excursion'
+import { isCountry, isJuryMember } from '@/lib/roles'
+import { useAuth } from '@/context/AuthProvider'
+import { Card, CardContent, CardContentFirst } from './ui/card'
 
 export type MemberFormValues = MemberSchemaForm & { id?: string }
 
-const ROLES: Array<MemberSchemaForm['role']> = ['Team Leader', 'Team Contestant', 'Observer']
+const COUNTRY_ROLES: Array<MemberSchemaForm['role']> = ['Team Leader', 'Team Contestant', 'Observer']
+const JURY_ROLES: Array<MemberSchemaForm['role']> = ['Jury Member', 'Observer', 'Language Expert']
 const GENDERS = ['Male', 'Female', 'Other'] as const
+const DOCUMENTS = ['Passport', 'ID Card'] as const
 const TSHIRT_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'] as const
-const FOOD_OPTIONS = [
+const FOOD_PREFERENCES = [
   'Vegetarian',
   'Vegan',
   'Halal',
-  'Gluten free',
-  'Nut allergy',
-  'Lactose intolerant',
   'Hindu meal (Non-Vegetarian)',
   'Kosher',
 ] as const
+const FOOD_ALLERGIES = [
+  'Gluten free',
+  'Nut allergy',
+  'Lactose intolerant',
+] as const
 
 export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partial<MemberFormValues>; onSubmit: (values: MemberFormValues) => Promise<void> | void }) {
+  const { user, claims, loading } = useAuth()
   const [teams, setTeams] = useState<Team[]>([])
+  const [hasPreferences, setHasPreferences] = useState<string>(initialValues?.food_req === undefined ? "" : "y")
+  const [hasAllergies, setHasAllergies] = useState<string>(initialValues?.food_allergies === undefined ? "" : "y")
 
   const form = useForm<MemberFormValues>({
     resolver: zodResolver(memberFormSchema as unknown as z.ZodType<MemberSchemaForm>),
@@ -50,15 +60,19 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
       preferred_name: initialValues?.preferred_name ?? '',
       gender: initialValues?.gender ?? '',
       other_gender: initialValues?.other_gender ?? '',
+      acco_req: initialValues?.acco_req ?? '',
       date_of_birth: initialValues?.date_of_birth ?? '',
       tshirt_size: initialValues?.tshirt_size ?? 'M',
       indiv_language: initialValues?.indiv_language ?? '',
       indiv_contest_req: initialValues?.indiv_contest_req ?? '',
+      document_type: initialValues?.document_type ?? '',
       passport_number: initialValues?.passport_number ?? '',
       issue_date: initialValues?.issue_date ?? '',
       expiry_date: initialValues?.expiry_date ?? '',
+      issuing_country: initialValues?.issuing_country ?? '',
+      nationality: initialValues?.nationality ?? '',
       food_req: initialValues?.food_req ?? [],
-      other_food_req: initialValues?.other_food_req ?? '',
+      food_allergies: initialValues?.food_allergies ?? '',
       excursion_route: initialValues?.excursion_route ?? '',
       city_tour: initialValues?.city_tour ?? '',
     },
@@ -77,11 +91,33 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
     await onSubmit({ ...values, id: initialValues?.id })
   }
 
+  const ynForm = (text : string, getter : string, setter : Dispatch<SetStateAction<string>>, field : "food_req" | "food_allergies", def : any) => {
+    return <div>
+      <Label>{text}</Label>
+      <RadioGroup className="mt-2 gap-2" value={getter} onValueChange={(v) => {
+          setter(v) 
+          if (v === "") form.setValue(field, def)
+        }}>
+        <div key="yes" className="flex items-center gap-2">
+          <RadioGroupItem id="yes" value="y" />
+          <Label htmlFor="yes" className="cursor-pointer">
+            Yes
+          </Label>
+        </div>
+        <div key="no" className="flex items-center gap-2">
+          <RadioGroupItem id="no" value="" />
+          <Label htmlFor="no" className="cursor-pointer">
+            No
+          </Label>
+        </div>
+      </RadioGroup>
+    </div>
+  }
   return (
     <form onSubmit={form.handleSubmit(handleSubmit)} id="member-form" className="space-y-8">
       {/* Personal Information */}
       <div className="space-y-3">
-        <div className="text-base font-semibold">Personal Information</div>
+        <div className="text-base font-semibold" style= {{paddingTop: 15}}>Personal Information</div>
         <FieldGroup>
           <Controller
             name="role"
@@ -94,7 +130,7 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
                     <SelectValue placeholder="Select role" />
                   </SelectTrigger>
                   <SelectContent>
-                    {ROLES.map((r) => (
+                    {(isJuryMember(claims) ? JURY_ROLES : COUNTRY_ROLES).map((r) => (
                       <SelectItem key={r} value={r}>
                         {r}
                       </SelectItem>
@@ -107,7 +143,7 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
               </div>
             )}
           />
-          {!isObserver && (
+          {(!isJuryMember(claims) && !isObserver) && (
             <Controller
               name="team"
               control={form.control}
@@ -135,6 +171,15 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
           )}
         </FieldGroup>
 
+        <br />
+
+
+        {/* {/* <Card> */}
+          {/* <CardContentFirst>  */}
+            <p className='text-sm'>The given, middle and last names refer to those displayed on one's passport.</p>
+          {/* </CardContentFirst> */}
+        {/* // </Card> */}
+
         <FieldGroup>
           <Controller
             name="given_name"
@@ -149,6 +194,9 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
               </div>
             )}
           />
+        </FieldGroup>
+
+        <FieldGroup>
           <Controller
             name="middle_name"
             control={form.control}
@@ -159,6 +207,9 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
               </div>
             )}
           />
+        </FieldGroup>
+
+        <FieldGroup>
           <Controller
             name="last_name"
             control={form.control}
@@ -172,29 +223,29 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
               </div>
             )}
           />
-        </FieldGroup>
-
-        <FieldGroup>
           <Controller
             name="display_name"
             control={form.control}
             render={({ field }) => (
               <div>
-                <Label>Display name</Label>
-                <Input placeholder="Enter display name" {...field} />
+                <Label>Badge name</Label>
+                <Input placeholder="Enter badge name" {...field} />
                 {form.formState.errors.display_name && (
                   <FieldError errors={[form.formState.errors.display_name]} />
                 )}
               </div>
             )}
           />
+        </FieldGroup>
+
+        <FieldGroup>
           <Controller
             name="preferred_name"
             control={form.control}
             render={({ field }) => (
               <div>
-                <Label>Preferred name</Label>
-                <Input placeholder="Enter preferred name" {...field} />
+                <Label>Name to be used in official documents (certificates, IOL website etc.)</Label>
+                <Input placeholder="Enter official name" {...field} />
                 {form.formState.errors.preferred_name && (
                   <FieldError errors={[form.formState.errors.preferred_name]} />
                 )}
@@ -202,6 +253,8 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
             )}
           />
         </FieldGroup>
+
+        <br />
 
         <FieldGroup>
           <Controller
@@ -245,6 +298,23 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
             />
           )}
         </FieldGroup>
+        <div className='text-sm'>
+            We are committed to ensuring that all participants, including trans and non-binary contestants, feel safe, comfortable, and welcome in their accommodation arrangements.
+            Therefore, if any of the participants has specific justifiable accommodation requests or access requirements, please outline them below. This may include, but is not limited to: requests to share a room with a specific contestant from the same country/territory whom they know well, requests to avoid sharing a room with contestants from another country/territory whom they do not know, preferences regarding sharing a room with contestants of their gender assigned at birth, requests for a single room or any alternative accommodation arrangements that would support their wellbeing.
+        </div>
+        <FieldGroup>
+          <Controller
+            name="acco_req"
+            control={form.control}
+            render={({ field }) => (
+              <div>
+                <Input placeholder="Enter requirement" {...field} />
+              </div>
+            )}
+          />
+        </FieldGroup>
+
+        <br />
 
         <FieldGroup>
           <Controller
@@ -328,14 +398,37 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
       {/* Travel */}
       <div className="space-y-3">
         <div className="text-base font-semibold">Travel</div>
+        <div>ID Cards are only accepted for EU/EEA/Swiss citizens.</div>
         <FieldGroup>
+          <Controller
+            name="document_type"
+            control={form.control}
+            render={({ field }) => (
+              <div>
+                <Label>Document type</Label>
+                <RadioGroup className="mt-2 gap-2" value={field.value} onValueChange={field.onChange}>
+                  {DOCUMENTS.map((d) => {
+                    const id = `document-${d}`
+                    return (
+                      <div key={id} className="flex items-center gap-2">
+                        <RadioGroupItem id={id} value={d} />
+                        <Label htmlFor={id} className="cursor-pointer">
+                          {d}
+                        </Label>
+                      </div>
+                    )
+                  })}
+                </RadioGroup>
+              </div>
+            )}
+          />
           <Controller
             name="passport_number"
             control={form.control}
             render={({ field }) => (
               <div>
-                <Label>Passport number (optional)</Label>
-                <Input placeholder="Enter passport number" {...field} />
+                <Label>Passport/ID Card number</Label>
+                <Input placeholder="Enter passport/ID card number" {...field} />
               </div>
             )}
           />
@@ -344,7 +437,7 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
             control={form.control}
             render={({ field }) => (
               <div>
-                <Label>Passport issue date</Label>
+                <Label>Issue date</Label>
                 <Input type="date" {...field} />
               </div>
             )}
@@ -354,8 +447,28 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
             control={form.control}
             render={({ field }) => (
               <div>
-                <Label>Passport expiry date</Label>
+                <Label>Expiry date</Label>
                 <Input type="date" {...field} />
+              </div>
+            )}
+          />
+          <Controller
+            name="issuing_country"
+            control={form.control}
+            render={({ field }) => (
+              <div>
+                <Label>Issuing country</Label>
+                <Input placeholder="Enter issuing country" {...field} />
+              </div>
+            )}
+          />
+          <Controller
+            name="nationality"
+            control={form.control}
+            render={({ field }) => (
+              <div>
+                <Label>Nationality</Label>
+                <Input placeholder="Enter nationality" {...field} />
               </div>
             )}
           />
@@ -364,16 +477,17 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
 
       {/* Dietary Requirement */}
       <div className="space-y-3">
-        <div className="text-base font-semibold">Dietary Requirement</div>
+        <div className="text-base font-semibold">Food preferences and allergies</div>
         <FieldGroup>
-          <Controller
+          {ynForm("Does this participant have food preferences?", hasPreferences, setHasPreferences, "food_req", [])}
+          {hasPreferences && <Controller
             name="food_req"
             control={form.control}
             render={({ field }) => (
               <div className="col-span-2">
-                <Label>Food requirements</Label>
+                <Label>Food preferences</Label>
                 <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                  {FOOD_OPTIONS.map((opt) => {
+                  {FOOD_PREFERENCES.map((opt) => {
                     const checked = (field.value ?? []).includes(opt)
                     return (
                       <label key={opt} className="flex items-center gap-2">
@@ -393,22 +507,23 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
                 </div>
               </div>
             )}
-          />
-          <Controller
-            name="other_food_req"
+          />}
+          {ynForm("Does this participant have food allergies?", hasAllergies, setHasAllergies, "food_allergies", "")}
+          {hasAllergies && <Controller
+            name="food_allergies"
             control={form.control}
             render={({ field }) => (
               <div>
-                <Label>Other food requirements</Label>
-                <Input placeholder="Enter details" {...field} />
+                <Label>Food allergies</Label>
+                <Input placeholder="Enter allergies" {...field} />
               </div>
             )}
-          />
+          />}
         </FieldGroup>
       </div>
       
       {/*Sightseeing Options*/}
-      {isObserver && (<div className="space-y-3">
+      {/* {isObserver && (<div className="space-y-3">
         <div className="text-base font-semibold">Sightseeing Options</div>
         <FieldGroup>
           <Controller
@@ -450,7 +565,7 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
                 )}
               />
         </FieldGroup>
-      </div>)}
+      </div>)} */}
       
       <Button type="submit" form="member-form">
         Save

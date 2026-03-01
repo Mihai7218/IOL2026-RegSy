@@ -42,10 +42,10 @@ const FOOD_ALLERGIES = [
 ] as const
 
 export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partial<MemberFormValues>; onSubmit: (values: MemberFormValues) => Promise<void> | void }) {
-  const { user, claims, loading } = useAuth()
+  const { claims } = useAuth()
   const [teams, setTeams] = useState<Team[]>([])
-  const [hasPreferences, setHasPreferences] = useState<string>(initialValues?.food_req === undefined ? "" : "y")
-  const [hasAllergies, setHasAllergies] = useState<string>(initialValues?.food_allergies === undefined ? "" : "y")
+  const [hasPreferences, setHasPreferences] = useState<string>(initialValues?.food_req === undefined || initialValues?.food_req?.length === 0 ? "" : "y")
+  const [hasAllergies, setHasAllergies] = useState<string>(initialValues?.food_allergies === undefined || initialValues.food_allergies === "" ? "" : "y")
 
   const form = useForm<MemberFormValues>({
     resolver: zodResolver(memberFormSchema as unknown as z.ZodType<MemberSchemaForm>),

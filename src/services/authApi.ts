@@ -17,6 +17,7 @@ import {
 
 import { auth, provider, db } from "@/lib/firebase";
 import { Role } from "@/lib/roles";
+import { getFolder } from "@/lib/utils";
 
 export type AuthErrorCode =
   | "InvalidInvitation"
@@ -162,7 +163,9 @@ export async function loginWithGoogle(): Promise<AuthResult<User>> {
     // Check if this is a new user by seeing if a countries document exists
     const countryRef = doc(db, "countries", authUid);
     const countrySnap = await getDoc(countryRef);
-    const isNewUser = !countrySnap.exists();
+    const juryRef = doc(db, "juryMembers", authUid);
+    const jurySnap = await getDoc(juryRef);
+    const isNewUser = !countrySnap.exists() && !jurySnap.exists();
 
     // If new user, they must use the Register tab with an invitation code
     if (isNewUser) {
@@ -185,21 +188,6 @@ export async function loginWithGoogle(): Promise<AuthResult<User>> {
     }
     const mapped = mapAuthError(error);
     return fail(mapped.code, mapped.message);
-  }
-}
-
-function getFolder(role: Role) : string | undefined {
-  switch (role) {
-    case "country":
-      return "countries"
-    case "jury":
-      return "juryMembers"
-    case "volunteer":
-      return "volunteers"
-    case "loc":
-      return "locMembers"
-    default:
-      return undefined;
   }
 }
 

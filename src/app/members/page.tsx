@@ -11,18 +11,23 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog'
 import { FieldGroup } from '@/components/ui/field'
 import { fetchMembers, fetchTeams, deleteMember, type Member, type Team } from '@/services/firebaseApi'
+import { useAuth } from '@/context/AuthProvider'
+import { isJuryMember } from '@/lib/roles'
 
-type RoleBucket = 'Team Leader' | 'Team Contestant' | 'Observer'
+type RoleBucket = 'Team Leader' | 'Team Contestant' | 'Observer' | 'Jury Member' | 'Language Expert'
 
-const ROLE_LABELS: RoleBucket[] = ['Team Leader', 'Team Contestant', 'Observer']
-const OBSERVER_MAX = 2 // Assumption: max 2 observers; adjust when wired to backend/payment.
+const COUNTRY_ROLE_LABELS: RoleBucket[] = ['Team Leader', 'Team Contestant', 'Observer']
+const JURY_ROLE_LABELS: RoleBucket[] = ['Jury Member', 'Language Expert', 'Observer']
 
 export default function MembersPage() {
+  const auth = useAuth()
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [members, setMembers] = useState<Member[]>([])
   const [teams, setTeams] = useState<Team[]>([])
   const [confirmId, setConfirmId] = useState<string | null>(null)
+
+  const roleLabels = (isJuryMember(auth.claims) ? JURY_ROLE_LABELS : COUNTRY_ROLE_LABELS)
 
   useEffect(() => {
     async function load() {
@@ -50,10 +55,12 @@ export default function MembersPage() {
       'Team Leader': [],
       'Team Contestant': [],
       'Observer': [],
+      'Jury Member': [],
+      'Language Expert': [],
     }
     for (const m of members) {
       const role = (m.role as RoleBucket) ?? ('Observer' as RoleBucket)
-      const bucket: RoleBucket = ROLE_LABELS.includes(role) ? role : 'Observer'
+      const bucket: RoleBucket = roleLabels.includes(role) ? role : 'Observer'
       buckets[bucket].push(m)
     }
     // Sort leaders and contestants by team name then by display_name
@@ -67,10 +74,10 @@ export default function MembersPage() {
     buckets['Team Contestant'].sort(byTeamThenName)
     // Observers sorted by name
     buckets['Observer'].sort((a, b) => (a.display_name ?? '').localeCompare(b.display_name ?? ''))
+    buckets['Jury Member'].sort((a, b) => (a.display_name ?? '').localeCompare(b.display_name ?? ''))
+    buckets['Language Expert'].sort((a, b) => (a.display_name ?? '').localeCompare(b.display_name ?? ''))
     return buckets
   }, [members, teamNameById])
-
-  const observerRemaining = Math.max(0, OBSERVER_MAX - grouped['Observer'].length)
 
   function handleCreate() {
     router.push('/members/create' as Route)
@@ -88,6 +95,8 @@ export default function MembersPage() {
     setMembers((prev) => prev.filter((m) => m.id !== id))
   }
 
+  const isTeamMember = (role: RoleBucket) => role === 'Team Contestant' || role === 'Team Leader' 
+
   return (
     <div className="space-y-6 px-10">
       <div className="flex items-center justify-between">
@@ -99,35 +108,32 @@ export default function MembersPage() {
         <Card><CardHeader>Loading…</CardHeader><CardContent /></Card>
       ) : (
         <div className="space-y-8">
-          {ROLE_LABELS.map((role) => (
+          {roleLabels.map((role) => (
             <Card key={role}>
               <CardHeader className="flex flex-row items-center justify-between">
                 <div className="text-base font-medium">{role}</div>
-                {role === 'Observer' && (
-                  <div className="text-sm text-muted-foreground">Remaining slots: {observerRemaining}</div>
-                )}
               </CardHeader>
               <CardContent>
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-[40%]">Name</TableHead>
-                      <TableHead>Team</TableHead>
+                      {isTeamMember(role) && <TableHead>Team</TableHead>}
                       <TableHead className="w-[180px] text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {grouped[role].length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={3} className="text-center text-muted-foreground">No members</TableCell>
+                        <TableCell colSpan={2 + (isTeamMember(role) ? 1 : 0)} className="text-center text-muted-foreground">No members</TableCell>
                       </TableRow>
                     ) : (
                       grouped[role].map((m) => (
                         <TableRow key={m.id ?? m.display_name}>
                           <TableCell className="font-medium">{m.display_name ?? '-'}</TableCell>
-                          <TableCell>
-                            {role === 'Observer' ? '-' : (m.team ? (teamNameById.get(m.team) ?? '-') : '-')}
-                          </TableCell>
+                          {isTeamMember(role) && <TableCell>
+                            {m.team ? (teamNameById.get(m.team) ?? '-') : '-'}
+                          </TableCell>}
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
                               <Button variant="outline" size="sm" onClick={() => handleEdit(m.id)}>Edit</Button>

@@ -69,7 +69,7 @@ export default function EditMemberPage() {
       given_name: values.given_name,
       middle_name: values.middle_name ?? '',
       last_name: values.last_name,
-      display_name: [values.given_name, values.middle_name, values.last_name].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim(),
+      display_name: values.display_name,
       preferred_name: values.preferred_name,
       gender: values.gender,
       other_gender: values.other_gender ?? '',

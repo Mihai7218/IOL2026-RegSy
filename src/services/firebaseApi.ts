@@ -3,7 +3,10 @@
  * Keep UI free of Firebase details.
  */
 
+import { useAuth } from '@/context/AuthProvider'
+import { getClaims } from '@/lib/claims'
 import { auth, db } from '@/lib/firebase'
+import { getFolder, getRole } from '@/lib/utils'
 import { PaymentStep } from '@/schemas/payment'
 import {
   collection,
@@ -172,8 +175,9 @@ export const deleteTeam = async (_teamId: string): Promise<void> => {
 
 export const fetchMembers = async (_teamId?: string): Promise<Member[]> => {
   const user = auth.currentUser
+  const claims = await getClaims(user)
   if (!user) return []
-  const membersCol = collection(db, 'countries', user.uid, 'members')
+  const membersCol = collection(db, getFolder(getRole(claims)), user.uid, 'members')
   const q = _teamId
     ? query(membersCol, where('team', '==', _teamId))
     : membersCol
@@ -183,8 +187,9 @@ export const fetchMembers = async (_teamId?: string): Promise<Member[]> => {
 
 export const upsertMember = async (_member: Member): Promise<void> => {
   const user = auth.currentUser
+  const claims = await getClaims(user)
   if (!user) throw new Error('Not authenticated')
-  const membersCol = collection(db, 'countries', user.uid, 'members')
+  const membersCol = collection(db, getFolder(getRole(claims)), user.uid, 'members')
   const id = _member.id ?? doc(membersCol).id
   const ref = doc(membersCol, id)
   const { id: _omitId, ...data } = _member
@@ -200,8 +205,9 @@ export const upsertMember = async (_member: Member): Promise<void> => {
 
 export const deleteMember = async (_memberId: string): Promise<void> => {
   const user = auth.currentUser
+  const claims = await getClaims(user)
   if (!user) throw new Error('Not authenticated')
-  const ref = doc(db, 'countries', user.uid, 'members', _memberId)
+  const ref = doc(db, getFolder(getRole(claims)), user.uid, 'members', _memberId)
   await deleteDoc(ref)
 }
 

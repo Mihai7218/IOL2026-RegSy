@@ -30,7 +30,8 @@ export const memberFormSchema = z.object({
 
   // Dietary Requirement
   food_req: z.string().array().optional(),
-  food_allergies: z.string().optional(),
+  food_allergies: z.string().array().optional(),
+  other_food_allergies: z.string().optional(),
 
   // Observer Sightseeing
   excursion_route: z.string().optional(),

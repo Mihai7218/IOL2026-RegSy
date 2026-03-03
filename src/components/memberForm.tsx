@@ -36,16 +36,27 @@ const FOOD_PREFERENCES = [
   'Kosher',
 ] as const
 const FOOD_ALLERGIES = [
-  'Gluten free',
-  'Nut allergy',
-  'Lactose intolerant',
+  'Cereals containing gluten - wheat, rye, barley, oats.',
+  'Crustaceans, e.g., crabs, prawns, lobsters',
+  'Eggs',
+  'Fish',
+  'Peanuts',
+  'Soybeans',
+  'Milk',
+  'Nuts - almonds, hazelnuts, walnuts, cashews, pecan nuts, brazil nuts, pistachio nuts, macadamia/Queensland nut',
+  'Celery',
+  'Mustard',
+  'Sesame seeds',
+  'Sulphur dioxide and sulphites used as a preservative (at concentrations of more than 10 mg/kg or 10 mg/L in terms of total sulphur dioxide)',
+  'Lupin',
+  'Molluscs, e.g., mussels, oysters, squid, snails',
 ] as const
 
 export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partial<MemberFormValues>; onSubmit: (values: MemberFormValues) => Promise<void> | void }) {
   const { claims } = useAuth()
   const [teams, setTeams] = useState<Team[]>([])
   const [hasPreferences, setHasPreferences] = useState<string>(initialValues?.food_req === undefined || initialValues?.food_req?.length === 0 ? "" : "y")
-  const [hasAllergies, setHasAllergies] = useState<string>(initialValues?.food_allergies === undefined || initialValues.food_allergies === "" ? "" : "y")
+  const [hasAllergies, setHasAllergies] = useState<string>(initialValues?.other_food_allergies === undefined || initialValues.other_food_allergies === "" ? "" : "y")
 
   const form = useForm<MemberFormValues>({
     resolver: zodResolver(memberFormSchema as unknown as z.ZodType<MemberSchemaForm>),
@@ -72,7 +83,8 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
       issuing_country: initialValues?.issuing_country ?? '',
       nationality: initialValues?.nationality ?? '',
       food_req: initialValues?.food_req ?? [],
-      food_allergies: initialValues?.food_allergies ?? '',
+      food_allergies: initialValues?.food_allergies ?? [],
+      other_food_allergies: initialValues?.other_food_allergies ?? '',
       excursion_route: initialValues?.excursion_route ?? '',
       city_tour: initialValues?.city_tour ?? '',
     },
@@ -91,13 +103,16 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
     await onSubmit({ ...values, id: initialValues?.id })
   }
 
-  const ynForm = (text : string, getter : string, setter : Dispatch<SetStateAction<string>>, field : "food_req" | "food_allergies", def : any) => {
+  const ynForm = (text : string, getter : string, setter : Dispatch<SetStateAction<string>>, fields : ("food_req" | "food_allergies" | "other_food_allergies")[], def : any[]) => {
     return <div>
       <Label>{text}</Label>
       <RadioGroup className="mt-2 gap-2" value={getter} onValueChange={(v) => {
           setter(v) 
-          if (v === "") form.setValue(field, def)
-        }}>
+          fields.forEach((field, i) => {
+            const fieldT = field as "food_req" | "food_allergies" | "other_food_allergies"
+            if (v === "") form.setValue(fieldT, def[i])
+          })
+      }}>
         <div key="yes" className="flex items-center gap-2">
           <RadioGroupItem id="yes" value="y" />
           <Label htmlFor="yes" className="cursor-pointer">
@@ -186,8 +201,8 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
             control={form.control}
             render={({ field }) => (
               <div>
-                <Label>Given name</Label>
-                <Input placeholder="Enter given name" {...field} />
+                <Label>First name(s)</Label>
+                <Input placeholder="Enter first name(s)" {...field} />
                 {form.formState.errors.given_name && (
                   <FieldError errors={[form.formState.errors.given_name]} />
                 )}
@@ -195,7 +210,7 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
             )}
           />
         </FieldGroup>
-
+{/* 
         <FieldGroup>
           <Controller
             name="middle_name"
@@ -207,7 +222,7 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
               </div>
             )}
           />
-        </FieldGroup>
+        </FieldGroup> */}
 
         <FieldGroup>
           <Controller
@@ -479,7 +494,7 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
       <div className="space-y-3">
         <div className="text-base font-semibold">Food preferences and allergies</div>
         <FieldGroup>
-          {ynForm("Does this participant have food preferences?", hasPreferences, setHasPreferences, "food_req", [])}
+          {ynForm("Does this participant have food preferences?", hasPreferences, setHasPreferences, ["food_req"], [[]])}
           {hasPreferences && <Controller
             name="food_req"
             control={form.control}
@@ -508,13 +523,41 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
               </div>
             )}
           />}
-          {ynForm("Does this participant have food allergies?", hasAllergies, setHasAllergies, "food_allergies", "")}
+          {ynForm("Does this participant have food allergies?", hasAllergies, setHasAllergies, ["food_allergies", "other_food_allergies"], [[],""])}
           {hasAllergies && <Controller
             name="food_allergies"
             control={form.control}
             render={({ field }) => (
-              <div>
+              <div className="col-span-2">
                 <Label>Food allergies</Label>
+                <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {FOOD_ALLERGIES.map((opt) => {
+                    const checked = (field.value ?? []).includes(opt)
+                    return (
+                      <label key={opt} className="flex items-center gap-2">
+                        <Checkbox
+                          checked={checked}
+                          onCheckedChange={(v) => {
+                            const current = new Set(field.value ?? [])
+                            if (v) current.add(opt)
+                            else current.delete(opt)
+                            field.onChange(Array.from(current))
+                          }}
+                        />
+                        <span>{opt}</span>
+                      </label>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+          />}
+          {hasAllergies && <Controller
+            name="other_food_allergies"
+            control={form.control}
+            render={({ field }) => (
+              <div>
+                <Label>Other allergies</Label>
                 <Input placeholder="Enter allergies" {...field} />
               </div>
             )}

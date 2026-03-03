@@ -136,7 +136,8 @@ export type Member = {
   issuing_country?: string
   nationality?: string
   food_req?: string[]
-  food_allergies?: string
+  food_allergies?: string[]
+  other_food_allergies?: string
   excursion_route?: string
   city_tour?: string
 }

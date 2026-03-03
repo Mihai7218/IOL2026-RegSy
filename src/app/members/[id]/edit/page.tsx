@@ -55,7 +55,8 @@ export default function EditMemberPage() {
       issuing_country: member.issuing_country ?? '',
       nationality: member.nationality ?? '',
       food_req: member.food_req ?? [],
-      food_allergies: member.food_allergies ?? '',
+      food_allergies: member.food_allergies ?? [],
+      other_food_allergies: member.other_food_allergies ?? '',
       excursion_route: member.excursion_route ?? '',
       city_tour: member.city_tour ?? '',
     }
@@ -85,7 +86,8 @@ export default function EditMemberPage() {
       issuing_country: values.issuing_country ?? '',
       nationality: values.nationality ?? '',
       food_req: values.food_req ?? [],
-      food_allergies: values.food_allergies ?? '',
+      food_allergies: values.food_allergies ?? [],
+      other_food_allergies: values.other_food_allergies ?? '',
       excursion_route: values.excursion_route ?? '',
       city_tour: values.city_tour ?? '',
     }

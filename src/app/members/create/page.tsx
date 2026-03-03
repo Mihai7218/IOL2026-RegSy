@@ -32,7 +32,8 @@ export default function CreateMemberPage() {
       issuing_country: values.issuing_country ?? '',
       nationality: values.nationality ?? '',
       food_req: values.food_req ?? [],
-      food_allergies: values.food_allergies ?? '',
+      food_allergies: values.food_allergies ?? [],
+      other_food_allergies: values.other_food_allergies ?? '',
       excursion_route: values.excursion_route ?? '',
       city_tour: values.city_tour ?? '',
     }

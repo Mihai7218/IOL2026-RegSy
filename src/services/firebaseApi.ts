@@ -388,20 +388,23 @@ export type AdminPaymentRow = {
   step?: PaymentStep
   plan?: string
   subtotal?: number
-  totalOnline?: number
-  totalBank?: number
-  processingFeeOnline?: number
+  alreadyPaid?: number
+  teams?: number
+  observers?: number
+  singleRooms?: number
 }
 
 export const adminListPaymentsDetailed = async (): Promise<AdminPaymentRow[]> => {
   const countriesSnap = await getDocs(collection(db, 'countries'))
-  return countriesSnap.docs
+  let rows = countriesSnap.docs
     .map((countryDoc) => {
       const data = countryDoc.data() as any
       const payment = data?.payment ?? {}
       const registration = payment?.registration ?? {}
       const confirmation = payment?.confirmation ?? {}
       const totals = payment?.pricing ?? {}
+      const obs = parseInt(registration?.additional_observers)
+      const sr = parseInt(registration?.single_room_requests)
       return {
         id: countryDoc.id,
         country_name: data?.country_name ?? countryDoc.id,
@@ -409,12 +412,37 @@ export const adminListPaymentsDetailed = async (): Promise<AdminPaymentRow[]> =>
         step: payment?.step,
         plan: registration?.plan,
         subtotal: totals?.subtotal,
-        totalOnline: totals?.totalOnline,
-        totalBank: totals?.totalBank,
-        processingFeeOnline: totals?.processingFeeOnline,
+        alreadyPaid: registration?.paid_before,
+        teams: registration?.number_of_teams,
+        observers: Number.isNaN(obs) ? undefined : obs,
+        singleRooms: Number.isNaN(sr) ? undefined : sr,
       }
     })
     .sort((a, b) => a.country_name.localeCompare(b.country_name))
+  
+  let total = {
+        id: 0 as any,
+        country_name: "Total",
+        country_code: '—',
+        step: "",
+        plan: "",
+        subtotal: 0,
+        alreadyPaid: 0,
+        teams: 0,
+        observers: 0,
+        singleRooms: 0,
+      }
+  rows.forEach ((currentValue) => {
+    console.log(currentValue);
+    total.subtotal += (currentValue?.subtotal ?? 0);
+    total.alreadyPaid += (currentValue?.alreadyPaid ?? 0);
+    total.teams += (currentValue?.teams ?? 0);
+    total.observers += (currentValue?.observers ?? 0);
+    total.singleRooms += (currentValue?.singleRooms ?? 0);
+  }, )
+  rows.push(total);
+  console.log(total);
+  return rows;
 }
 
 export type AdminCountryProfile = {

@@ -12,24 +12,31 @@ const columns: ColumnDef<AdminPaymentRow>[] = [
   { accessorKey: 'step', header: 'Step' },
   {
     accessorKey: 'subtotal',
-    header: 'Subtotal',
+    header: 'Total',
     cell: ({ getValue }) => {
       const value = getValue<number | undefined>()
-      return typeof value === 'number' ? `$${value.toLocaleString()}` : '—'
+      return typeof value === 'number' ? `${value.toLocaleString()} lei` : '—'
     },
   },
   {
-    accessorKey: 'totalOnline',
-    header: 'Total (online)',
+    accessorKey: 'alreadyPaid',
+    header: 'Paid',
     cell: ({ getValue }) => {
       const value = getValue<number | undefined>()
-      return typeof value === 'number' ? `$${value.toLocaleString()}` : '—'
+      return typeof value === 'number' ? `${value.toLocaleString()} lei` : '—'
     },
   },
   {
-    accessorKey: 'payment_method',
-    header: 'Payment method',
-    cell: ({ getValue }) => getValue<string | undefined>() ?? '—',
+    accessorKey: 'teams',
+    header: '# teams',
+  },
+  {
+    accessorKey: 'observers',
+    header: '# observers',
+  },
+  {
+    accessorKey: 'singleRooms',
+    header: '# single rooms',
   },
 ]
 

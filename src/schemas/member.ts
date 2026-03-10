@@ -12,13 +12,17 @@ export const memberFormSchema = z.object({
   preferred_name: z.string().min(1, 'Preferred name is required'),
   gender: z.string().min(1, 'Gender is required'),
   other_gender: z.string().optional(),
-  acco_req: z.string().optional(),
   date_of_birth: z.string().min(1, 'Date of birth is required'),
   tshirt_size: z.string().min(1, 'T-shirt size is required'),
 
   // Contest Information
   indiv_language: z.string().optional(),
   indiv_contest_req: z.string().optional(),
+
+  // Accommodation
+  acco_req: z.string().optional(),
+  room_type: z.string().optional(),
+  roommate_preference: z.string().optional(),
 
   // Travel
   document_type: z.string().optional(),

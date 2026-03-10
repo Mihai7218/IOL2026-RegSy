@@ -27,6 +27,9 @@ const COUNTRY_ROLES: Array<MemberSchemaForm['role']> = ['Team Leader', 'Team Con
 const JURY_ROLES: Array<MemberSchemaForm['role']> = ['Jury Member', 'Observer', 'Language Expert']
 const GENDERS = ['Male', 'Female', 'Other'] as const
 const DOCUMENTS = ['Passport', 'ID Card'] as const
+const ROOM_TYPES = ['Single (requires supplement)', 'Twin/Triple (separate beds)', 'Double (shared bed)'] as const
+const ROOM_TYPES_C = ['Single (requires supplement)', 'Twin/Triple (separate beds)'] as const
+const RM_PREF = ['Same role', 'Same country'] as const
 const TSHIRT_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'] as const
 const FOOD_PREFERENCES = [
   'Vegetarian',
@@ -77,6 +80,8 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
       indiv_language: initialValues?.indiv_language ?? '',
       indiv_contest_req: initialValues?.indiv_contest_req ?? '',
       document_type: initialValues?.document_type ?? '',
+      room_type: initialValues?.room_type ?? '',
+      roommate_preference: initialValues?.roommate_preference ?? '',
       passport_number: initialValues?.passport_number ?? '',
       issue_date: initialValues?.issue_date ?? '',
       expiry_date: initialValues?.expiry_date ?? '',
@@ -96,6 +101,7 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
 
   const isObserver = form.watch('role') === 'Observer'
   const isContestant = form.watch('role') === 'Team Contestant'
+  const roomType = form.watch('room_type')
   const genderValue = form.watch('gender')
   const teamOptions = useMemo(() => teams.map((t) => ({ id: t.id!, name: t.team_name })), [teams])
 
@@ -188,20 +194,13 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
 
         <br />
 
-
-        {/* {/* <Card> */}
-          {/* <CardContentFirst>  */}
-            <p className='text-sm'>The given, middle and last names refer to those displayed on one's passport.</p>
-          {/* </CardContentFirst> */}
-        {/* // </Card> */}
-
         <FieldGroup>
           <Controller
             name="given_name"
             control={form.control}
             render={({ field }) => (
               <div>
-                <Label>First name(s)</Label>
+                <Label>First name(s) (according to the travel document)</Label>
                 <Input placeholder="Enter first name(s)" {...field} />
                 {form.formState.errors.given_name && (
                   <FieldError errors={[form.formState.errors.given_name]} />
@@ -230,7 +229,7 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
             control={form.control}
             render={({ field }) => (
               <div>
-                <Label>Last name</Label>
+                <Label>Last name (according to the travel document)</Label>
                 <Input placeholder="Enter last name" {...field} />
                 {form.formState.errors.last_name && (
                   <FieldError errors={[form.formState.errors.last_name]} />
@@ -313,21 +312,6 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
             />
           )}
         </FieldGroup>
-        <div className='text-sm'>
-            We are committed to ensuring that all participants, including trans and non-binary contestants, feel safe, comfortable, and welcome in their accommodation arrangements.
-            Therefore, if any of the participants has specific justifiable accommodation requests or access requirements, please outline them below. This may include, but is not limited to: requests to share a room with a specific contestant from the same country/territory whom they know well, requests to avoid sharing a room with contestants from another country/territory whom they do not know, preferences regarding sharing a room with contestants of their gender assigned at birth, requests for a single room or any alternative accommodation arrangements that would support their wellbeing.
-        </div>
-        <FieldGroup>
-          <Controller
-            name="acco_req"
-            control={form.control}
-            render={({ field }) => (
-              <div>
-                <Input placeholder="Enter requirement" {...field} />
-              </div>
-            )}
-          />
-        </FieldGroup>
 
         <br />
 
@@ -409,6 +393,86 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
           />
         </FieldGroup>
       </div>)}
+
+      {/* Accommodation */}
+      <div className="space-y-3">
+        <div className="text-base font-semibold">Accommodation</div>
+        <div className='text-sm'>
+            We are committed to ensuring that all participants, including trans and non-binary contestants, feel safe, comfortable, and welcome in their accommodation arrangements.
+            Therefore, if any of the participants has specific justifiable accommodation requests or access requirements, please outline them below. This may include, but is not limited to: requests to share a room with a specific contestant from the same country/territory whom they know well, requests to avoid sharing a room with contestants from another country/territory whom they do not know, preferences regarding sharing a room with contestants of their gender assigned at birth, requests for a single room or any alternative accommodation arrangements that would support their wellbeing.
+        </div>
+        <FieldGroup>
+          <Controller
+            name="acco_req"
+            control={form.control}
+            render={({ field }) => (
+              <div>
+                <Input placeholder="Enter requirement" {...field} />
+              </div>
+            )}
+          />
+        </FieldGroup>
+        <FieldGroup>
+          <Controller
+            name="room_type"
+            control={form.control}
+            render={({ field }) => (
+              <div>
+                <Label>Room type</Label>
+                <RadioGroup className="mt-2 gap-2" value={field.value} onValueChange={field.onChange}>
+                  {(isContestant ? ROOM_TYPES_C : ROOM_TYPES).map((d) => {
+                    const id = `room-${d}`
+                    return (
+                      <div key={id} className="flex items-center gap-2">
+                        <RadioGroupItem id={id} value={d} />
+                        <Label htmlFor={id} className="cursor-pointer">
+                          {d}
+                        </Label>
+                      </div>
+                    )
+                  })}
+                </RadioGroup>
+              </div>
+            )}
+          />
+        </FieldGroup>
+        <FieldGroup>
+        {!isContestant && (roomType !== "") && !(roomType === "Double (shared bed)") && (
+          <Controller
+            name="roommate_preference"
+            control={form.control}
+            render={({ field }) => (
+              <div>
+                <Label>Roommate preference</Label>
+                <RadioGroup className="mt-2 gap-2" value={field.value} onValueChange={field.onChange}>
+                  {RM_PREF.map((d) => {
+                    const id = `roommate-${d}`
+                    return (
+                      <div key={id} className="flex items-center gap-2">
+                        <RadioGroupItem id={id} value={d} />
+                        <Label htmlFor={id} className="cursor-pointer">
+                          {d}
+                        </Label>
+                      </div>
+                    )
+                  })}
+                </RadioGroup>
+              </div>
+            )}
+          />)}
+          {!isContestant && (roomType !== "") && (roomType === "Double (shared bed)") && (<Controller
+            name="roommate_preference"
+            control={form.control}
+            render={({ field }) => (
+              <div>
+                <Label>Roommate name</Label>
+                <Input placeholder="Enter name" {...field} />
+              </div>
+            )}
+          />
+        )}
+        </FieldGroup>
+      </div>
 
       {/* Travel */}
       <div className="space-y-3">

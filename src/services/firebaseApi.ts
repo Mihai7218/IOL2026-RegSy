@@ -129,6 +129,8 @@ export type Member = {
   tshirt_size: string
   indiv_language?: string
   indiv_contest_req?: string
+  room_type?: string
+  roommate_preference?: string
   document_type?: string
   passport_number?: string
   issue_date?: string
@@ -251,6 +253,32 @@ export const adminListCountrySummaries = async (): Promise<AdminCountrySummary[]
     }),
   )
   return rows.sort((a, b) => a.country_name.localeCompare(b.country_name))
+}
+
+export type AdminJurySummary = {
+  id: string
+  jury_member_name: string
+  memberCount: number
+  updated_at?: string
+}
+
+export const adminListJurySummaries = async (): Promise<AdminJurySummary[]> => {
+  const countriesSnap = await getDocs(collection(db, 'juryMembers'))
+  const rows = await Promise.all(
+    countriesSnap.docs.map(async (juryDoc) => {
+      const data = juryDoc.data() as any
+      const [membersSnap] = await Promise.all([
+        getDocs(collection(db, 'juryMembers', juryDoc.id, 'members')),
+      ])
+      return {
+        id: juryDoc.id,
+        jury_member_name: data?.jury_member_name ?? juryDoc.id,
+        memberCount: membersSnap.size,
+        updated_at: toIsoString(data?.updated_at),
+      }
+    }),
+  )
+  return rows.sort((a, b) => a.jury_member_name.localeCompare(b.jury_member_name))
 }
 
 export type AdminContactRow = {

@@ -1,22 +1,23 @@
-import { RegistrationDetailValues, PaymentConfirmationValues } from "@/schemas/payment"
+import { RegistrationDetailValues, PaymentConfirmationValues, JuryStep1Values } from "@/schemas/payment"
 import { auth, db } from "@/lib/firebase"
 import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore"
 
 // Persist registration details for the current country user under /countries/{uid}/payment
-export async function saveRegistrationDetails(
-	data: RegistrationDetailValues,
+async function baseSaveRegistrationDetails(
+	data: any,
 	totals: { subtotal: number; totalBank: number },
 	step: number,
+	dbName: string,
 ): Promise<void> {
 	const user = auth.currentUser
 	if (!user) {
 		throw new Error("Not authenticated")
 	}
 
-	const countryRef = doc(db, "countries", user.uid)
-	const prev = (await getDoc(countryRef)).data()?.payment ?? {}
+	const ref = doc(db, dbName, user.uid)
+	const prev = (await getDoc(ref)).data()?.payment ?? {}
 	await setDoc(
-		countryRef,
+		ref,
 		{
 			payment: {
 				...prev,
@@ -34,6 +35,23 @@ export async function saveRegistrationDetails(
 		},
 		{ merge: true },
 	)
+}
+
+export async function saveRegistrationDetails(
+	data: RegistrationDetailValues,
+	totals: { subtotal: number; totalBank: number },
+	step: number,
+) {
+	return baseSaveRegistrationDetails(data, totals, step, "countries")
+}
+
+
+export async function saveJuryDetails(
+	data: JuryStep1Values,
+	totals: { subtotal: number; totalBank: number },
+	step: number,
+) {
+	return baseSaveRegistrationDetails(data, totals, step, "juryMembers")
 }
 
 // Persist payment confirmation info and step under /countries/{uid}/payment

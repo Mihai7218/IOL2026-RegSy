@@ -25,6 +25,8 @@ export default function CreateMemberPage() {
       tshirt_size: values.tshirt_size,
       indiv_language: values.indiv_language ?? '',
       indiv_contest_req: values.indiv_contest_req ?? '',
+      room_type: values.room_type ?? '',
+      roommate_preference: values.roommate_preference ?? '',
       document_type: values.document_type ?? '',
       passport_number: values.passport_number ?? '',
       issue_date: values.issue_date ?? '',

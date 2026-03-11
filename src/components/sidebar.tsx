@@ -56,21 +56,35 @@ const menuItems = [
         status: status.TIME_SENSITIVE,
         label: "Contacts",
         href: "/contacts",
-        visible: ["admin", "country"],
+        visible: ["admin", "country", "jury"],
+      },
+      {
+        icon: Banknote,
+        status: status.TIME_SENSITIVE,
+        label: "Payment (Country)",
+        href: "/payments",
+        visible: ["admin"],
       },
       {
         icon: Banknote,
         status: status.TIME_SENSITIVE,
         label: "Payment",
         href: "/payments",
-        visible: ["admin", "country"],
+        visible: ["country"],
+      },
+      {
+        icon: Banknote,
+        status: status.TIME_SENSITIVE,
+        label: "Payment (Jury)",
+        href: "/juryPayments",
+        visible: ["admin"],
       },
       {
         icon: Banknote,
         status: status.TIME_SENSITIVE,
         label: "Payment",
         href: "/juryPayments",
-        visible: ["admin", "jury"],
+        visible: ["jury"],
       },
 
       {

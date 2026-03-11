@@ -36,20 +36,21 @@ export type Contact = {
     phone?: string
   }
 }
-export const fetchContacts = async (): Promise<Contact | null> => {
+export const fetchContacts = async (role = 'countries'): Promise<Contact | null> => {
   const user = auth.currentUser
   if (!user) return null
-  const countryRef = doc(db, 'countries', user.uid)
+  const countryRef = doc(db, role, user.uid)
   const snap = await getDoc(countryRef)
   if (!snap.exists()) return null
   const data = snap.data() as any
   if (!data.contact) return null
   return data.contact as Contact
 }
-export const upsertContacts = async (_contacts: Contact): Promise<void> => {
+export const fetchContactsJury = async (): Promise<Contact | null> => fetchContacts('juryMembers')
+export const upsertContacts = async (_contacts: Contact, role = "countries"): Promise<void> => {
   const user = auth.currentUser
   if (!user) throw new Error('Not authenticated')
-  const countryRef = doc(db, 'countries', user.uid)
+  const countryRef = doc(db, role, user.uid)
   await setDoc(
     countryRef,
     {
@@ -59,6 +60,7 @@ export const upsertContacts = async (_contacts: Contact): Promise<void> => {
     { merge: true },
   )
 }
+export const upsertContactsJury = async (_contacts: Contact): Promise<void> => upsertContacts(_contacts, 'juryMembers')
 
 // Transportation - aligned with flightLegSchema in src/schemas/transport.ts
 export type FlightLeg = {

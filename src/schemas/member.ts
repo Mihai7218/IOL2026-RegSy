@@ -19,14 +19,23 @@ export const memberFormSchema = z.object({
   indiv_language: z.string().optional(),
   indiv_contest_req: z.string().optional(),
 
+  // Accommodation
+  acco_req: z.string().optional(),
+  room_type: z.string().optional(),
+  roommate_preference: z.string().optional(),
+
   // Travel
+  document_type: z.string().optional(),
   passport_number: z.string().optional(),
   issue_date: z.string().optional(),
   expiry_date: z.string().optional(),
+  issuing_country: z.string().optional(),
+  nationality: z.string().optional(),
 
   // Dietary Requirement
   food_req: z.string().array().optional(),
-  other_food_req: z.string().optional(),
+  food_allergies: z.string().array().optional(),
+  other_food_allergies: z.string().optional(),
 
   // Observer Sightseeing
   excursion_route: z.string().optional(),

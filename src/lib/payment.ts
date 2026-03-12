@@ -1,4 +1,4 @@
-import { RegistrationDetailValues } from "@/schemas/payment"
+import { JuryStep1Values, RegistrationDetailValues } from "@/schemas/payment"
 import { count } from "firebase/firestore"
 import { LucideSwitchCamera } from "lucide-react"
 
@@ -56,16 +56,23 @@ export const PRICING = {
   singleRoomFee: 2300, // per single room request
 }
 
-export type PriceBreakdown = {
-  planBaseFirstTeam: number
-  firstTeamAfterAdjustments: number
-  teamsCost: number
+export type CommonPriceBreakdown = {
   observersCost: number
   singleRoomsCost: number
   subtotal: number
   paid_before: number
   totalBank: number
 }
+
+export type JuryPriceBreakdown = {
+  languageExpertsCost: number
+} & CommonPriceBreakdown
+
+export type PriceBreakdown  = {
+  planBaseFirstTeam: number
+  firstTeamAfterAdjustments: number
+  teamsCost: number
+} & CommonPriceBreakdown
 
 export function computeFirstTeamFee(detail: Pick<RegistrationDetailValues, "plan" | "country_status">) {
   if (detail.plan === "late") {
@@ -113,6 +120,25 @@ export function calculatePricing(detail: RegistrationDetailValues): PriceBreakdo
   planBaseFirstTeam: BASE_FIRST_TEAM_BY_PLAN[detail.plan][detail.country_status],
     firstTeamAfterAdjustments: round2(firstTeam),
     teamsCost: round2(teamsCost),
+    observersCost: round2(observersCost),
+    singleRoomsCost: round2(singleRoomsCost),
+    paid_before: round2(paid_before),
+    subtotal: round2(subtotal),
+    totalBank,
+  }
+}
+
+export function calculateJuryPricing(detail: JuryStep1Values): JuryPriceBreakdown {
+  const languageExpertsCost = detail.language_experts * (PRICING.observerFee/2)
+  const observersCost = detail.additional_observers * PRICING.observerFee
+  const singleRoomsCost = detail.single_room_requests * PRICING.singleRoomFee
+  const subtotal = languageExpertsCost + observersCost + singleRoomsCost
+  const paid_before = detail.paid_before
+
+  const totalBank = round2(subtotal - paid_before)
+
+  return {
+    languageExpertsCost: round2(languageExpertsCost),
     observersCost: round2(observersCost),
     singleRoomsCost: round2(singleRoomsCost),
     paid_before: round2(paid_before),

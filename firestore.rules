@@ -33,6 +33,17 @@ service cloud.firestore {
       }
     }
 
+    // /juryMembers/{authUid}
+    match /juryMembers/{authUid} {
+      // Country owner can only access their own doc; admin can access all
+      allow read, write: if isAdmin() || isCountryOwner(authUid);
+
+      // /juryMembers/{authUid}/members/{memberId}
+      match /members/{memberId} {
+        allow read, write: if isAdmin() || isCountryOwner(authUid);
+      }
+    }
+
     // /invitationCodes/{code}
     match /invitationCodes/{code} {
       // Anyone can read a code to validate it on the registration form

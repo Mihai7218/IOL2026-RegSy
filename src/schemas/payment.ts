@@ -11,6 +11,15 @@ export const registrationDetailSchema = z.object({
 
 export type RegistrationDetailValues = z.infer<typeof registrationDetailSchema>;
 
+export const juryStep1Schema = z.object({
+  additional_observers: z.number().int().min(0),
+  language_experts: z.number().int().min(0),
+  single_room_requests: z.number().int().min(0),
+  paid_before: z.number().min(0),
+});
+
+export type JuryStep1Values = z.infer<typeof juryStep1Schema>;
+
 export const invoiceDataSchema = z.object({
   entity_name: z.string().min(1, 'Entity name is required'),
   address: z.string().min(1, 'Address is required'),

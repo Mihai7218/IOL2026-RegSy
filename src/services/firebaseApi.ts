@@ -3,7 +3,10 @@
  * Keep UI free of Firebase details.
  */
 
+import { useAuth } from '@/context/AuthProvider'
+import { getClaims } from '@/lib/claims'
 import { auth, db } from '@/lib/firebase'
+import { getFolder, getRole } from '@/lib/utils'
 import { PaymentStep } from '@/schemas/payment'
 import {
   collection,
@@ -33,20 +36,21 @@ export type Contact = {
     phone?: string
   }
 }
-export const fetchContacts = async (): Promise<Contact | null> => {
+export const fetchContacts = async (role = 'countries'): Promise<Contact | null> => {
   const user = auth.currentUser
   if (!user) return null
-  const countryRef = doc(db, 'countries', user.uid)
+  const countryRef = doc(db, role, user.uid)
   const snap = await getDoc(countryRef)
   if (!snap.exists()) return null
   const data = snap.data() as any
   if (!data.contact) return null
   return data.contact as Contact
 }
-export const upsertContacts = async (_contacts: Contact): Promise<void> => {
+export const fetchContactsJury = async (): Promise<Contact | null> => fetchContacts('juryMembers')
+export const upsertContacts = async (_contacts: Contact, role = "countries"): Promise<void> => {
   const user = auth.currentUser
   if (!user) throw new Error('Not authenticated')
-  const countryRef = doc(db, 'countries', user.uid)
+  const countryRef = doc(db, role, user.uid)
   await setDoc(
     countryRef,
     {
@@ -56,6 +60,7 @@ export const upsertContacts = async (_contacts: Contact): Promise<void> => {
     { merge: true },
   )
 }
+export const upsertContactsJury = async (_contacts: Contact): Promise<void> => upsertContacts(_contacts, 'juryMembers')
 
 // Transportation - aligned with flightLegSchema in src/schemas/transport.ts
 export type FlightLeg = {
@@ -121,15 +126,22 @@ export type Member = {
   preferred_name: string
   gender: string
   other_gender?: string
+  acco_req?: string
   date_of_birth: string
   tshirt_size: string
   indiv_language?: string
   indiv_contest_req?: string
+  room_type?: string
+  roommate_preference?: string
+  document_type?: string
   passport_number?: string
   issue_date?: string
   expiry_date?: string
+  issuing_country?: string
+  nationality?: string
   food_req?: string[]
-  other_food_req?: string
+  food_allergies?: string[]
+  other_food_allergies?: string
   excursion_route?: string
   city_tour?: string
 }
@@ -168,8 +180,9 @@ export const deleteTeam = async (_teamId: string): Promise<void> => {
 
 export const fetchMembers = async (_teamId?: string): Promise<Member[]> => {
   const user = auth.currentUser
+  const claims = await getClaims(user)
   if (!user) return []
-  const membersCol = collection(db, 'countries', user.uid, 'members')
+  const membersCol = collection(db, getFolder(getRole(claims)), user.uid, 'members')
   const q = _teamId
     ? query(membersCol, where('team', '==', _teamId))
     : membersCol
@@ -179,8 +192,9 @@ export const fetchMembers = async (_teamId?: string): Promise<Member[]> => {
 
 export const upsertMember = async (_member: Member): Promise<void> => {
   const user = auth.currentUser
+  const claims = await getClaims(user)
   if (!user) throw new Error('Not authenticated')
-  const membersCol = collection(db, 'countries', user.uid, 'members')
+  const membersCol = collection(db, getFolder(getRole(claims)), user.uid, 'members')
   const id = _member.id ?? doc(membersCol).id
   const ref = doc(membersCol, id)
   const { id: _omitId, ...data } = _member
@@ -196,8 +210,9 @@ export const upsertMember = async (_member: Member): Promise<void> => {
 
 export const deleteMember = async (_memberId: string): Promise<void> => {
   const user = auth.currentUser
+  const claims = await getClaims(user)
   if (!user) throw new Error('Not authenticated')
-  const ref = doc(db, 'countries', user.uid, 'members', _memberId)
+  const ref = doc(db, getFolder(getRole(claims)), user.uid, 'members', _memberId)
   await deleteDoc(ref)
 }
 
@@ -240,6 +255,32 @@ export const adminListCountrySummaries = async (): Promise<AdminCountrySummary[]
     }),
   )
   return rows.sort((a, b) => a.country_name.localeCompare(b.country_name))
+}
+
+export type AdminJurySummary = {
+  id: string
+  jury_member_name: string
+  memberCount: number
+  updated_at?: string
+}
+
+export const adminListJurySummaries = async (): Promise<AdminJurySummary[]> => {
+  const countriesSnap = await getDocs(collection(db, 'juryMembers'))
+  const rows = await Promise.all(
+    countriesSnap.docs.map(async (juryDoc) => {
+      const data = juryDoc.data() as any
+      const [membersSnap] = await Promise.all([
+        getDocs(collection(db, 'juryMembers', juryDoc.id, 'members')),
+      ])
+      return {
+        id: juryDoc.id,
+        jury_member_name: data?.jury_member_name ?? juryDoc.id,
+        memberCount: membersSnap.size,
+        updated_at: toIsoString(data?.updated_at),
+      }
+    }),
+  )
+  return rows.sort((a, b) => a.jury_member_name.localeCompare(b.jury_member_name))
 }
 
 export type AdminContactRow = {
@@ -548,9 +589,8 @@ function generateCode(length = 8): string {
   return result
 }
 
-export const createInviteCode = async (
-  _country_code: string,
-  _country_name: string,
+const createInviteCode = async (
+  data: any,
 ): Promise<{ code: string; created_at: string }> => {
   const user = auth.currentUser
   if (!user) throw new Error('Not authenticated')
@@ -560,8 +600,7 @@ export const createInviteCode = async (
   const created_at = serverTimestamp()
 
   await setDoc(ref, {
-    country_code: _country_code,
-    country_name: _country_name,
+    ...data,
     created_at,
     created_by: user.uid,
     used: false,
@@ -571,4 +610,42 @@ export const createInviteCode = async (
 
   // created_at is a Firestore Timestamp in the database; here we just echo an ISO string for immediate UI use.
   return { code, created_at: new Date().toISOString() }
+}
+
+export const createCountryInviteCode = async (
+  _country_name: string,
+  _country_code: string,
+): Promise<{ code: string; created_at: string }> => {
+  return createInviteCode({
+    country_code: _country_code,
+    country_name: _country_name,
+  })
+}
+
+export const createJuryMemberInviteCode = async (
+  _jury_member_name: string,
+  _jury_member_code: string,
+): Promise<{ code: string; created_at: string }> => {
+  return createInviteCode({
+    jury_member_code: _jury_member_code,
+    jury_member_name: _jury_member_name,
+  })
+}
+
+export const createVolunteerInviteCode = async (
+  _volunteer_name: string,
+  _ignored: string,
+): Promise<{ code: string; created_at: string }> => {
+  return createInviteCode({
+    volunteer_name: _volunteer_name,
+  })
+}
+
+export const createLOCMemberInviteCode = async (
+  _loc_member_name: string,
+  _ignored: string,
+): Promise<{ code: string; created_at: string }> => {
+  return createInviteCode({
+    loc_member_name: _loc_member_name,
+  })
 }

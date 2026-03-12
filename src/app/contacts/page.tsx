@@ -11,11 +11,16 @@ import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { FieldGroup } from '@/components/ui/field'
 
-import { fetchContacts, upsertContacts } from '@/services/firebaseApi'
+import { fetchContacts, fetchContactsJury, upsertContacts, upsertContactsJury } from '@/services/firebaseApi'
 import { ContactForm, contactSchema } from '@/schemas/contact'
+import { isJuryMember } from '@/lib/roles'
+import { useAuth } from '@/context/AuthProvider'
 
 export default function ContactsPage() {
   const [showSecondary, setShowSecondary] = useState(false)
+  const { claims } = useAuth()
+
+  const isJury = isJuryMember(claims)
 
   const EMPTY_SECONDARY = {
           name: '',
@@ -38,7 +43,7 @@ export default function ContactsPage() {
   } = form
 
   useEffect(() => {
-    fetchContacts().then(c => {
+    (isJury ? fetchContactsJury : fetchContacts)().then(c => {
       if (!c) return
       setShowSecondary(!!c.secondary)
 
@@ -66,7 +71,7 @@ export default function ContactsPage() {
         v => v?.trim()
       )
 
-      await upsertContacts({
+      await (isJury ? upsertContactsJury : upsertContacts)({
         primary: {
           name: data.primary.name.trim(),
           email: data.primary.email.trim(),
@@ -99,7 +104,7 @@ export default function ContactsPage() {
             {/* PRIMARY */}
             <section>
               <div className="font-medium text-xl mt-6">Primary contact</div>
-              <div className='font-small mb-6 text-sm text-muted-foreground'>This can be any person that will register the team(s) and do the payment, not necessarily the team leader accompanying the students.</div>
+              {!isJury && (<div className='font-small mb-6 text-sm text-muted-foreground'>This can be any person that will register the team(s) and do the payment, not necessarily the team leader accompanying the students.</div>)}
               <FieldGroup>
                 <Field
                   name="primary.name"

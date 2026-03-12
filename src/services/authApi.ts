@@ -16,6 +16,8 @@ import {
 } from "firebase/firestore";
 
 import { auth, provider, db } from "@/lib/firebase";
+import { Role } from "@/lib/roles";
+import { getFolder } from "@/lib/utils";
 
 export type AuthErrorCode =
   | "InvalidInvitation"
@@ -36,6 +38,21 @@ export type CountryInfo = {
   country_code: string;
   country_name: string;
 };
+
+export type JuryInfo = {
+  jury_member_code: string;
+  jury_member_name: string;
+};
+
+export type VolunteerInfo = {
+  volunteer_name: string;
+};
+
+export type LOCInfo = {
+  loc_name: string;
+};
+
+export type UserInfo = CountryInfo | JuryInfo | VolunteerInfo | LOCInfo | {}
 
 function fail<T>(code: AuthErrorCode, message: string): AuthResult<T> {
   return { ok: false, code, message };
@@ -77,7 +94,22 @@ function mapAuthError(error: unknown): { code: AuthErrorCode; message: string } 
   return { code: "Unknown", message };
 }
 
-async function redeemInvitation(code: string): Promise<{ codeId: string; country: CountryInfo }> {
+function determineRole(data: any) : [Role, UserInfo] {
+  if (data.country_code) 
+    return ["country", {
+      country_code : data.country_code,
+      country_name : data.country_name,
+    }]
+  if (data.jury_member_code) return ["jury", {
+      jury_member_code : data.jury_member_code,
+      jury_member_name : data.jury_member_name,
+    }]
+  if (data.volunteer_name) return ["volunteer", {volunteer_name : data.volunteer_name}]
+  if (data.loc_name) return ["loc", {loc_name: data.loc_name}]
+  return ["guest", {}]
+}
+
+async function redeemInvitation(code: string): Promise<{ codeId: string; role: Role, info: UserInfo }> {
   const trimmed = code.trim().toUpperCase();
   if (!trimmed) {
     throw new Error("Invitation code is required");
@@ -94,12 +126,12 @@ async function redeemInvitation(code: string): Promise<{ codeId: string; country
     throw new Error("Invitation code already used.");
   }
 
+  const [role, info] = determineRole(data)
+
   return {
     codeId: trimmed,
-    country: {
-      country_code: data.country_code as string,
-      country_name: data.country_name as string,
-    },
+    role: role,
+    info: info,
   };
 }
 
@@ -131,7 +163,9 @@ export async function loginWithGoogle(): Promise<AuthResult<User>> {
     // Check if this is a new user by seeing if a countries document exists
     const countryRef = doc(db, "countries", authUid);
     const countrySnap = await getDoc(countryRef);
-    const isNewUser = !countrySnap.exists();
+    const juryRef = doc(db, "juryMembers", authUid);
+    const jurySnap = await getDoc(juryRef);
+    const isNewUser = !countrySnap.exists() && !jurySnap.exists();
 
     // If new user, they must use the Register tab with an invitation code
     if (isNewUser) {
@@ -157,16 +191,24 @@ export async function loginWithGoogle(): Promise<AuthResult<User>> {
   }
 }
 
+function findDisplayName(info: UserInfo) : string | undefined {
+  if ("country_name" in info) return info.country_name
+  if ("jury_member_name" in info) return info.jury_member_name
+  if ("volunteer_name" in info) return info.volunteer_name
+  if ("loc_name" in info) return info.loc_name
+  return undefined
+}
+
 export async function registerWithEmail(
   email: string,
   password: string,
   invitationCode: string
-): Promise<AuthResult<{ user: User; country: CountryInfo }>> {
+): Promise<AuthResult<{ user: User; info: UserInfo }>> {
   let user: User | null = null;
 
   try {
     // 1. Validate invitation code first (without marking it used yet)
-    const { codeId, country } = await redeemInvitation(invitationCode);
+    const { codeId, role, info } = await redeemInvitation(invitationCode);
 
     // 2. Create Auth user
     const cred = await createUserWithEmailAndPassword(auth, email, password);
@@ -174,7 +216,12 @@ export async function registerWithEmail(
     const authUid = user.uid;
 
     const codeRef = doc(db, "invitationCodes", codeId);
-    const countryRef = doc(db, "countries", authUid);
+    
+    const folder = getFolder(role);
+    if (!folder) {
+      throw new Error("Invalid role");
+    }
+    const userRef = doc(db, folder, authUid);
 
     // 3. Atomically mark code as used + create country document
     await runTransaction(db, async (tx) => {
@@ -198,10 +245,9 @@ export async function registerWithEmail(
       );
 
       tx.set(
-        countryRef,
+        userRef,
         {
-          country_code: country.country_code,
-          country_name: country.country_name,
+          ...info,
           status: "registered",
           teamCount: 0,
           memberCount: 0,
@@ -212,11 +258,13 @@ export async function registerWithEmail(
       );
     });
 
-    if (!user.displayName && country.country_name) {
-      await updateProfile(user, { displayName: country.country_name });
+    const displayName = findDisplayName(info)
+
+    if (!user.displayName && displayName) {
+      await updateProfile(user, { displayName: displayName });
     }
 
-    return { ok: true, data: { user, country } };
+    return { ok: true, data: { user, info } };
   } catch (error) {
     if (user) {
       try {
@@ -232,12 +280,12 @@ export async function registerWithEmail(
 
 export async function registerWithGoogle(
   invitationCode: string
-): Promise<AuthResult<{ user: User; country: CountryInfo }>> {
+): Promise<AuthResult<{ user: User; info: UserInfo }>> {
   let user: User | null = null;
 
   try {
     // 1. Validate invitation code
-    const { codeId, country } = await redeemInvitation(invitationCode);
+    const { codeId, role, info } = await redeemInvitation(invitationCode);
 
     // 2. Sign in with Google (creates account if needed)
     const cred = await signInWithPopup(auth, provider as GoogleAuthProvider);
@@ -245,7 +293,12 @@ export async function registerWithGoogle(
     const authUid = user.uid;
 
     const codeRef = doc(db, "invitationCodes", codeId);
-    const countryRef = doc(db, "countries", authUid);
+    
+    const folder = getFolder(role);
+    if (!folder) {
+      throw new Error("Invalid role");
+    }
+    const userRef = doc(db, folder, authUid);
 
     // 3. Same transaction as email flow
     await runTransaction(db, async (tx) => {
@@ -269,10 +322,9 @@ export async function registerWithGoogle(
       );
 
       tx.set(
-        countryRef,
+        userRef,
         {
-          country_code: country.country_code,
-          country_name: country.country_name,
+          ...info,
           status: "registered",
           teamCount: 0,
           memberCount: 0,
@@ -283,11 +335,13 @@ export async function registerWithGoogle(
       );
     });
 
-    if (!user.displayName && country.country_name) {
-      await updateProfile(user, { displayName: country.country_name });
+    const displayName = findDisplayName(info)
+
+    if (!user.displayName && displayName) {
+      await updateProfile(user, { displayName: displayName });
     }
 
-    return { ok: true, data: { user, country } };
+    return { ok: true, data: { user, info } };
   } catch (error) {
     // For Google sign-in we don't attempt cleanup; user may already exist
     const mapped = mapAuthError(error);

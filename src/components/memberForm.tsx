@@ -27,8 +27,7 @@ const COUNTRY_ROLES: Array<MemberSchemaForm['role']> = ['Team Leader', 'Team Con
 const JURY_ROLES: Array<MemberSchemaForm['role']> = ['Jury Member', 'Observer', 'Language Expert']
 const GENDERS = ['Male', 'Female', 'Other'] as const
 const DOCUMENTS = ['Passport', 'ID Card'] as const
-const ROOM_TYPES = ['Single (requires supplement)', 'Twin/Triple (separate beds)', 'Double (shared bed)'] as const
-const ROOM_TYPES_C = ['Single (requires supplement)', 'Twin/Triple (separate beds)'] as const
+const ROOM_TYPES = ['Single (requires supplement)', 'Shared room'] as const
 const RM_PREF = ['Same role', 'Same country'] as const
 const TSHIRT_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'] as const
 const FOOD_PREFERENCES = [
@@ -65,7 +64,7 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
     resolver: zodResolver(memberFormSchema as unknown as z.ZodType<MemberSchemaForm>),
     defaultValues: {
       id: initialValues?.id,
-      role: initialValues?.role ?? 'Team Contestant',
+      role: initialValues?.role ?? '',
       team: initialValues?.team ?? '',
       given_name: initialValues?.given_name ?? '',
       middle_name: initialValues?.middle_name ?? '',
@@ -80,7 +79,7 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
       indiv_language: initialValues?.indiv_language ?? '',
       indiv_contest_req: initialValues?.indiv_contest_req ?? '',
       document_type: initialValues?.document_type ?? '',
-      room_type: initialValues?.room_type ?? '',
+      room_type: initialValues?.room_type ?? 'Shared room',
       roommate_preference: initialValues?.roommate_preference ?? '',
       passport_number: initialValues?.passport_number ?? '',
       issue_date: initialValues?.issue_date ?? '',
@@ -420,7 +419,7 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
               <div>
                 <Label>Room type</Label>
                 <RadioGroup className="mt-2 gap-2" value={field.value} onValueChange={field.onChange}>
-                  {(isContestant ? ROOM_TYPES_C : ROOM_TYPES).map((d) => {
+                  {ROOM_TYPES.map((d) => {
                     const id = `room-${d}`
                     return (
                       <div key={id} className="flex items-center gap-2">
@@ -437,7 +436,7 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
           />
         </FieldGroup>
         <FieldGroup>
-        {!isContestant && (roomType !== "") && !(roomType === "Double (shared bed)") && (
+        {!isContestant && !isJuryMember && (roomType !== "") && !(roomType === "Double (shared bed)") && (
           <Controller
             name="roommate_preference"
             control={form.control}
@@ -460,7 +459,7 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
               </div>
             )}
           />)}
-          {!isContestant && (roomType !== "") && (roomType === "Double (shared bed)") && (<Controller
+          {/* {!isContestant && (roomType !== "") && (roomType === "Double (shared bed)") && (<Controller
             name="roommate_preference"
             control={form.control}
             render={({ field }) => (
@@ -470,7 +469,7 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
               </div>
             )}
           />
-        )}
+        )} */}
         </FieldGroup>
       </div>
 

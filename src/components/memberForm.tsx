@@ -67,7 +67,6 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
       role: initialValues?.role ?? '',
       team: initialValues?.team ?? '',
       given_name: initialValues?.given_name ?? '',
-      middle_name: initialValues?.middle_name ?? '',
       last_name: initialValues?.last_name ?? '',
       display_name: initialValues?.display_name ?? '',
       preferred_name: initialValues?.preferred_name ?? '',
@@ -75,9 +74,8 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
       other_gender: initialValues?.other_gender ?? '',
       acco_req: initialValues?.acco_req ?? '',
       date_of_birth: initialValues?.date_of_birth ?? '',
-      tshirt_size: initialValues?.tshirt_size ?? 'M',
+      tshirt_size: initialValues?.tshirt_size ?? '',
       indiv_language: initialValues?.indiv_language ?? '',
-      indiv_contest_req: initialValues?.indiv_contest_req ?? '',
       document_type: initialValues?.document_type ?? '',
       room_type: initialValues?.room_type ?? 'Shared room',
       roommate_preference: initialValues?.roommate_preference ?? '',
@@ -364,7 +362,7 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
               control={form.control}
               render={({ field }) => (
                 <div>
-                  <Label>Contest language</Label>
+                  <Label>Individual contest language</Label>
                   <Select value={field.value || undefined} onValueChange={field.onChange}>
                     <SelectTrigger className="mt-1">
                       <SelectValue placeholder="Select language" />
@@ -377,19 +375,12 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
                       ))}
                     </SelectContent>
                   </Select>
+                {form.formState.errors.indiv_language && (
+                  <FieldError errors={[form.formState.errors.indiv_language]} />
+                )}
                 </div>
               )}
             />
-          <Controller
-            name="indiv_contest_req"
-            control={form.control}
-            render={({ field }) => (
-              <div>
-                <Label>Individual contest requirement (optional)</Label>
-                <Input placeholder="Enter requirement" {...field} />
-              </div>
-            )}
-          />
         </FieldGroup>
       </div>)}
 
@@ -427,6 +418,9 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
                         <Label htmlFor={id} className="cursor-pointer">
                           {d}
                         </Label>
+                        {form.formState.errors.room_type && (
+                          <FieldError errors={[form.formState.errors.room_type]} />
+                        )}
                       </div>
                     )
                   })}
@@ -497,6 +491,9 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
                     )
                   })}
                 </RadioGroup>
+                {form.formState.errors.document_type && (
+                  <FieldError errors={[form.formState.errors.document_type]} />
+                )}
               </div>
             )}
           />
@@ -507,6 +504,9 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
               <div>
                 <Label>Passport/ID Card number</Label>
                 <Input placeholder="Enter passport/ID card number" {...field} />
+                {form.formState.errors.passport_number && (
+                  <FieldError errors={[form.formState.errors.passport_number]} />
+                )}
               </div>
             )}
           />
@@ -517,6 +517,9 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
               <div>
                 <Label>Issue date</Label>
                 <Input type="date" {...field} />
+                {form.formState.errors.issue_date && (
+                  <FieldError errors={[form.formState.errors.issue_date]} />
+                )}
               </div>
             )}
           />
@@ -527,6 +530,9 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
               <div>
                 <Label>Expiry date</Label>
                 <Input type="date" {...field} />
+                {form.formState.errors.expiry_date && (
+                  <FieldError errors={[form.formState.errors.expiry_date]} />
+                )}
               </div>
             )}
           />
@@ -537,6 +543,9 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
               <div>
                 <Label>Issuing country</Label>
                 <Input placeholder="Enter issuing country" {...field} />
+                {form.formState.errors.issuing_country && (
+                  <FieldError errors={[form.formState.errors.issuing_country]} />
+                )}
               </div>
             )}
           />
@@ -547,6 +556,9 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
               <div>
                 <Label>Nationality</Label>
                 <Input placeholder="Enter nationality" {...field} />
+                {form.formState.errors.nationality && (
+                  <FieldError errors={[form.formState.errors.nationality]} />
+                )}
               </div>
             )}
           />

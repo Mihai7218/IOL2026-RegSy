@@ -120,7 +120,6 @@ export type Member = {
   team?: string
   role: string
   given_name: string
-  middle_name?: string
   last_name: string
   display_name: string
   preferred_name: string
@@ -130,15 +129,14 @@ export type Member = {
   date_of_birth: string
   tshirt_size: string
   indiv_language?: string
-  indiv_contest_req?: string
-  room_type?: string
+  room_type: string
   roommate_preference?: string
-  document_type?: string
-  passport_number?: string
-  issue_date?: string
-  expiry_date?: string
-  issuing_country?: string
-  nationality?: string
+  document_type: string
+  passport_number: string
+  issue_date: string
+  expiry_date: string
+  issuing_country: string
+  nationality: string
   food_req?: string[]
   food_allergies?: string[]
   other_food_allergies?: string

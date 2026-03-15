@@ -10,7 +10,6 @@ import { fetchMembers, upsertMember, type Member } from '@/services/firebaseApi'
 function splitName(m: Member) {
   return {
     given_name: m.given_name ?? '',
-    middle_name: m.middle_name ?? '',
     last_name: m.last_name ?? '',
     display_name: m.display_name ?? '',
     preferred_name: m.preferred_name ?? (m.given_name ?? ''),
@@ -47,7 +46,6 @@ export default function EditMemberPage() {
       date_of_birth: member.date_of_birth,
       tshirt_size: member.tshirt_size,
       indiv_language: member.indiv_language ?? '',
-      indiv_contest_req: member.indiv_contest_req ?? '',
       document_type: member.document_type ?? '',
       passport_number: member.passport_number ?? '',
       issue_date: member.issue_date ?? '',
@@ -68,7 +66,6 @@ export default function EditMemberPage() {
       role: values.role,
       team: values.role === 'Observer' ? '' : (values.team || ''),
       given_name: values.given_name,
-      middle_name: values.middle_name ?? '',
       last_name: values.last_name,
       display_name: values.display_name,
       preferred_name: values.preferred_name,
@@ -78,7 +75,6 @@ export default function EditMemberPage() {
       date_of_birth: values.date_of_birth,
       tshirt_size: values.tshirt_size,
       indiv_language: values.indiv_language ?? '',
-      indiv_contest_req: values.indiv_contest_req ?? '',
       room_type: values.room_type ?? '',
       roommate_preference: values.roommate_preference ?? '',
       document_type: values.document_type ?? '',

@@ -5,11 +5,10 @@ export const memberFormSchema = z.object({
   // Personal Information
   role: z.string().min(1, 'Role is required'),
   team: z.string().optional(),
-  given_name: z.string().min(1, 'Given name is required'),
-  middle_name: z.string().optional(),
+  given_name: z.string().min(1, 'First name is required'),
   last_name: z.string().min(1, 'Last name is required'),
-  display_name: z.string().min(1, 'Display name is required'),
-  preferred_name: z.string().min(1, 'Preferred name is required'),
+  display_name: z.string().min(1, 'Badge name is required'),
+  preferred_name: z.string().min(1, 'Official name is required'),
   gender: z.string().min(1, 'Gender is required'),
   other_gender: z.string().optional(),
   date_of_birth: z.string().min(1, 'Date of birth is required'),
@@ -17,20 +16,19 @@ export const memberFormSchema = z.object({
 
   // Contest Information
   indiv_language: z.string().optional(),
-  indiv_contest_req: z.string().optional(),
 
   // Accommodation
   acco_req: z.string().optional(),
-  room_type: z.string().optional(),
+  room_type: z.string().min(1, 'Please select a room type'),
   roommate_preference: z.string().optional(),
 
   // Travel
-  document_type: z.string().optional(),
-  passport_number: z.string().optional(),
-  issue_date: z.string().optional(),
-  expiry_date: z.string().optional(),
-  issuing_country: z.string().optional(),
-  nationality: z.string().optional(),
+  document_type: z.string().min(1, 'Please select a document type'),
+  passport_number: z.string().min(1, 'Document number is required'),
+  issue_date: z.string().min(1, 'Issue date is required'),
+  expiry_date: z.string().min(1, 'Expiry date is required'),
+  issuing_country: z.string().min(1, 'Issuing country is required'),
+  nationality: z.string().min(1, 'Nationality is required'),
 
   // Dietary Requirement
   food_req: z.string().array().optional(),
@@ -48,6 +46,15 @@ export const memberFormSchema = z.object({
       code: z.ZodIssueCode.invalid_date,
       message: 'Contestants should be less than 20 on the first day of the competition (born on or after July 28th, 2006).',
       path: ['date_of_birth'],
+    })
+  }
+
+  // If a contestant, they should be less than 20 on the date of the individual contest
+  if (val.role === 'Team Contestant' && val.indiv_language === "" || val.indiv_language === undefined) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Individual contest language is required',
+      path: ['indiv_language'],
     })
   }
 

@@ -63,7 +63,7 @@ export function TeamForm({
           control={form.control}
           render={({ field }) => (
             <div>
-              <Label>Contest language</Label>
+              <Label>Team contest language</Label>
               <Select value={field.value || undefined} onValueChange={field.onChange}>
                 <SelectTrigger className="mt-1">
                   <SelectValue placeholder="Select language" />

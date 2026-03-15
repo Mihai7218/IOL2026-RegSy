@@ -238,7 +238,9 @@ export type AdminCountrySummary = {
 export const adminListCountrySummaries = async (): Promise<AdminCountrySummary[]> => {
   const countriesSnap = await getDocs(collection(db, 'countries'))
   const rows = await Promise.all(
-    countriesSnap.docs.map(async (countryDoc) => {
+    countriesSnap.docs
+    .filter(adminTestFilter)
+    .map(async (countryDoc) => {
       const data = countryDoc.data() as any
       const [teamsSnap, membersSnap] = await Promise.all([
         getDocs(collection(db, 'countries', countryDoc.id, 'teams')),
@@ -267,7 +269,9 @@ export type AdminJurySummary = {
 export const adminListJurySummaries = async (): Promise<AdminJurySummary[]> => {
   const countriesSnap = await getDocs(collection(db, 'juryMembers'))
   const rows = await Promise.all(
-    countriesSnap.docs.map(async (juryDoc) => {
+    countriesSnap.docs
+    .filter(adminTestFilter)
+    .map(async (juryDoc) => {
       const data = juryDoc.data() as any
       const [membersSnap] = await Promise.all([
         getDocs(collection(db, 'juryMembers', juryDoc.id, 'members')),
@@ -299,6 +303,7 @@ export type AdminContactRow = {
 export const adminListContactsDetailed = async (): Promise<AdminContactRow[]> => {
   const countriesSnap = await getDocs(collection(db, 'countries'))
   return countriesSnap.docs
+    .filter(adminTestFilter)
     .map((countryDoc) => {
       const data = countryDoc.data() as any
       const contact = (data?.contact ?? {}) as Contact | undefined
@@ -331,7 +336,7 @@ export type AdminTeamRow = {
 export const adminListAllTeamsDetailed = async (): Promise<AdminTeamRow[]> => {
   const countriesSnap = await getDocs(collection(db, 'countries'))
   const rows: AdminTeamRow[] = []
-  for (const countryDoc of countriesSnap.docs) {
+  for (const countryDoc of countriesSnap.docs.filter(adminTestFilter)) {
     const data = countryDoc.data() as any
     const teamsSnap = await getDocs(collection(db, 'countries', countryDoc.id, 'teams'))
     teamsSnap.forEach((teamDoc) => {
@@ -359,7 +364,7 @@ export type AdminMemberRow = Member & {
 export const adminListAllMembersDetailed = async (): Promise<AdminMemberRow[]> => {
   const countriesSnap = await getDocs(collection(db, 'countries'))
   const rows: AdminMemberRow[] = []
-  for (const countryDoc of countriesSnap.docs) {
+  for (const countryDoc of countriesSnap.docs.filter(adminTestFilter)) {
     const data = countryDoc.data() as any
     const [teamsSnap, membersSnap] = await Promise.all([
       getDocs(collection(db, 'countries', countryDoc.id, 'teams')),
@@ -395,7 +400,7 @@ export type AdminSightseeingRow = Member & {
 export const adminListAllSightseeingMembersDetailed = async (): Promise<AdminSightseeingRow[]> => {
   const countriesSnap = await getDocs(collection(db, 'countries'))
   const rows: AdminMemberRow[] = []
-  for (const countryDoc of countriesSnap.docs) {
+  for (const countryDoc of countriesSnap.docs.filter(adminTestFilter)) {
     const data = countryDoc.data() as any
     const [teamsSnap, membersSnap] = await Promise.all([
       getDocs(collection(db, 'countries', countryDoc.id, 'teams')),
@@ -435,9 +440,15 @@ export type AdminPaymentRow = {
   singleRooms?: number
 }
 
+function adminTestFilter(entry: any) : boolean {
+    const x = entry.data()?.country_code ?? entry.data()?.jury_member_code ?? "" as string
+    return !(x.includes("ADM") || x.includes("TEST") || x === "")
+}
+
 export const adminListPaymentsDetailed = async (): Promise<AdminPaymentRow[]> => {
   const countriesSnap = await getDocs(collection(db, 'countries'))
   let rows = countriesSnap.docs
+    .filter(adminTestFilter)
     .map((countryDoc) => {
       const data = countryDoc.data() as any
       const payment = data?.payment ?? {}

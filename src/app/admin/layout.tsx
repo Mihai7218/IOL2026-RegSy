@@ -16,6 +16,7 @@ const NAV_LINKS = [
   { label: 'Teams', href: '/admin/teams' },
   { label: 'Members', href: '/admin/members' },
   { label: 'Jury Members', href: '/admin/jury' },
+  { label: 'Languages', href: '/admin/languages' },
   { label: 'Payment', href: '/admin/payments' },
   { label: 'Sightseeing', href: '/admin/sightseeing' },
   { label: 'Invites', href: '/admin/invites' },

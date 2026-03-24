@@ -6,6 +6,7 @@
 import { useAuth } from '@/context/AuthProvider'
 import { getClaims } from '@/lib/claims'
 import { auth, db } from '@/lib/firebase'
+import { Language, languages } from '@/lib/languages'
 import { getFolder, getRole } from '@/lib/utils'
 import { PaymentStep } from '@/schemas/payment'
 import {
@@ -20,6 +21,7 @@ import {
   setDoc,
   where,
 } from 'firebase/firestore'
+import { number } from 'zod'
 
 // Contacts - aligned with contactSchema in src/schemas/contact.ts
 export type Contact = {
@@ -385,6 +387,48 @@ export const adminListAllMembersDetailed = async (): Promise<AdminMemberRow[]> =
     })
   }
   return rows.sort((a, b) => a.country_name.localeCompare(b.country_name))
+}
+
+export type AdminLanguageRow = Language & {
+  indiv_count: number
+  team_count: number
+}
+
+export const adminListAllLanguagesDetailed = async (): Promise<AdminLanguageRow[]> => {
+  const countriesSnap = await getDocs(collection(db, 'countries'))
+  const languageRows : Map<string, AdminLanguageRow> = new Map(languages.map((language) => {
+      return [language.name, {
+      ...language,
+      indiv_count: 0,
+      team_count: 0,
+      }]}))
+  for (const countryDoc of countriesSnap.docs.filter(adminTestFilter)) {
+    const [teamsSnap, membersSnap] = await Promise.all([
+      getDocs(collection(db, 'countries', countryDoc.id, 'teams')),
+      getDocs(collection(db, 'countries', countryDoc.id, 'members')),
+    ])
+    teamsSnap.forEach((teamDoc) => {
+      const teamData = teamDoc.data() as Team
+      ((languageRows.get(teamData.team_language ?? "") ?? {
+        name : "",
+        code: "",
+        official_name: "",
+        indiv_count: 0,
+        team_count: 0,
+      }).team_count)++
+    })
+    membersSnap.forEach((memberDoc) => {
+      const member = memberDoc.data() as Member
+      ((languageRows.get(member.indiv_language ?? "") ?? {
+        name : "",
+        code: "",
+        official_name: "",
+        indiv_count: 0,
+        team_count: 0,
+      }).indiv_count)++
+    })
+  }
+  return Array.from(languageRows.values());
 }
 
 export type AdminSightseeingRow = Member & {

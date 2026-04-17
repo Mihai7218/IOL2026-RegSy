@@ -9,14 +9,11 @@ import { type AdminJurySummary, adminListCountrySummaries, adminListJurySummarie
 const columns: ColumnDef<AdminJurySummary>[] = [
   { accessorKey: 'jury_member_name', header: 'Name' },
   { accessorKey: 'memberCount', header: 'Registered people' },
-  {
-    accessorKey: 'updated_at',
-    header: 'Last updated',
-    cell: ({ getValue }) => {
-      const value = getValue<string | undefined>()
-      return value ? new Date(value).toLocaleString() : '—'
-    },
-  },
+  { accessorKey: 'subtotal', header: 'Total' },
+  { accessorKey: 'already_paid', header: 'Already paid' },
+  { accessorKey: 'observers', header: '# of observers' },
+  { accessorKey: 'language_experts', header: '# of language experts' },
+  { accessorKey: 'single_room_reqs', header: '# of single room requests' },
 ]
 
 export default function AdminJuryPage() {

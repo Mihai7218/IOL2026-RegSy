@@ -262,17 +262,29 @@ export const adminListCountrySummaries = async (): Promise<AdminCountrySummary[]
 export type AdminJurySummary = {
   id: string
   jury_member_name: string
-  memberCount: number
-  updated_at?: string
+  memberCount?: number
+  observers?: number
+  language_experts?: number
+  single_room_reqs?: number
+  subtotal?: number
+  already_paid?: number
 }
 
 export const adminListJurySummaries = async (): Promise<AdminJurySummary[]> => {
   const countriesSnap = await getDocs(collection(db, 'juryMembers'))
-  const rows = await Promise.all(
+  const rows = (await Promise.all(
     countriesSnap.docs
     .filter(adminTestFilter)
     .map(async (juryDoc) => {
       const data = juryDoc.data() as any
+      const payment = data?.payment ?? {}
+      const registration = payment?.registration ?? {}
+      const confirmation = payment?.confirmation ?? {}
+      const totals = payment?.pricing ?? {}
+      const obs = parseInt(registration?.additional_observers)
+      const le = parseInt(registration?.language_experts)
+      const sr = parseInt(registration?.single_room_requests)
+
       const [membersSnap] = await Promise.all([
         getDocs(collection(db, 'juryMembers', juryDoc.id, 'members')),
       ])
@@ -280,11 +292,35 @@ export const adminListJurySummaries = async (): Promise<AdminJurySummary[]> => {
         id: juryDoc.id,
         jury_member_name: data?.jury_member_name ?? juryDoc.id,
         memberCount: membersSnap.size,
-        updated_at: toIsoString(data?.updated_at),
+        subtotal: totals?.subtotal,
+        already_paid: registration?.paid_before,
+        observers: Number.isNaN(obs) ? undefined : obs,
+        language_experts: Number.isNaN(le) ? undefined : le,
+        single_room_reqs: Number.isNaN(sr) ? undefined : sr,
       }
-    }),
-  )
-  return rows.sort((a, b) => a.jury_member_name.localeCompare(b.jury_member_name))
+    }))).sort((a, b) => a.jury_member_name.localeCompare(b.jury_member_name))
+    let total = {
+      id: 0 as any,
+      jury_member_name: "Total",
+      memberCount: 0,
+      subtotal: 0,
+      already_paid: 0,
+      observers: 0,
+      language_experts: 0,
+      single_room_reqs: 0,
+    }
+    rows.forEach ((currentValue) => {
+      console.log(currentValue);
+      total.memberCount += (currentValue?.memberCount ?? 0);
+      total.subtotal += (currentValue?.subtotal ?? 0);
+      total.already_paid += (currentValue?.already_paid ?? 0);
+      total.observers += (currentValue?.observers ?? 0);
+      total.language_experts += (currentValue?.language_experts ?? 0);
+      total.single_room_reqs += (currentValue?.single_room_reqs ?? 0);
+    })
+
+  rows.push(total);
+  return rows;
 }
 
 export type AdminContactRow = {
@@ -387,6 +423,38 @@ export const adminListAllMembersDetailed = async (): Promise<AdminMemberRow[]> =
     })
   }
   return rows.sort((a, b) => a.country_name.localeCompare(b.country_name))
+}
+
+export type AdminJuryMemberRow = Member & {
+  jury_member_name: string
+}
+
+export const adminListAllJuryMemberMembersDetailed = async (): Promise<AdminJuryMemberRow[]> => {
+  const jurySnap = await getDocs(collection(db, 'juryMembers'))
+  const rows: AdminJuryMemberRow[] = []
+  for (const juryDoc of jurySnap.docs.filter(adminTestFilter)) {
+    const data = juryDoc.data() as any
+    const membersSnap = await getDocs(collection(db, 'juryMembers', juryDoc.id, 'members'))
+
+    membersSnap.forEach((memberDoc) => {
+      const member = memberDoc.data() as Member
+      rows.push({
+        id: memberDoc.id,
+        jury_member_name: data.jury_member_name, 
+        ...member,
+      })
+    })
+
+  }
+  console.log(rows)
+  return rows.sort((a, b) => {
+    const x = a.jury_member_name.localeCompare(b.jury_member_name)
+    if (x == 0) {
+      if (a.role == 'Jury Member') return -1
+      return 1
+    }
+    return x
+    })
 }
 
 export type AdminLanguageRow = Language & {

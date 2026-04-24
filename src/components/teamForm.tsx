@@ -79,7 +79,7 @@ export function TeamForm({
             </div>
           )}
         />
-        <Controller
+        {/* <Controller
           name="city_tour"
           control={form.control}
           render={({ field }) => (
@@ -116,7 +116,7 @@ export function TeamForm({
               </Select>
             </div>
           )}
-        />
+        /> */}
       </FieldGroup>
 
       <Button type="submit" form="team-form">Save</Button>

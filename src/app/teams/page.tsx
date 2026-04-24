@@ -135,8 +135,8 @@ export default function TeamsPage() {
             </CardHeader>
             <CardContent className='space-y-3'>
               <div className='text-sm'>Contest language: <span className='font-medium'>English (US)</span></div>
-              <div className='text-sm'>City tour route: <span className='font-medium'>A</span></div>
-              <div className='text-sm'>Excursion route: <span className='font-medium'>B</span></div>
+              {/* <div className='text-sm'>City tour route: <span className='font-medium'>A</span></div>
+              <div className='text-sm'>Excursion route: <span className='font-medium'>B</span></div> */}
 
               <div className='pt-2'>
                 <div className='text-sm font-medium mb-2'>Leader</div>
@@ -205,8 +205,8 @@ export default function TeamsPage() {
               </CardHeader>
               <CardContent className='space-y-3'>
                 <div className='text-sm'>Contest language: <span className='font-medium'>{team.team_language || '—'}</span></div>
-                <div className='text-sm'>City tour route: <span className='font-medium'>{team.city_tour || '—'}</span></div>
-                <div className='text-sm'>Excursion route: <span className='font-medium'>{team.excursion_route || '—'}</span></div>
+                {/* <div className='text-sm'>City tour route: <span className='font-medium'>{team.city_tour || '—'}</span></div>
+                <div className='text-sm'>Excursion route: <span className='font-medium'>{team.excursion_route || '—'}</span></div> */}
 
                 <div className='pt-2'>
                   <div className='text-sm font-medium mb-2'>Leader</div>

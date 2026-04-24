@@ -66,6 +66,7 @@ export const upsertContactsJury = async (_contacts: Contact): Promise<void> => u
 
 // Transportation - aligned with flightLegSchema in src/schemas/transport.ts
 export type FlightLeg = {
+  id?: string
   direction: 'arrival' | 'departure'
   terminal: string
   location: string
@@ -73,27 +74,41 @@ export type FlightLeg = {
   flight_no: string
   datetime: string // ISO
 }
+
 export const fetchTransport = async (): Promise<FlightLeg[]> => {
   const user = auth.currentUser
+  const claims = await getClaims(user)
   if (!user) return []
-  const countryRef = doc(db, 'countries', user.uid)
-  const snap = await getDoc(countryRef)
-  if (!snap.exists()) return []
-  const data = snap.data() as any
-  return (data.transport?.legs as FlightLeg[] | undefined) ?? []
+  const transportsCol = collection(db, getFolder(getRole(claims)), user.uid, 'transports')
+  const snaps = await getDocs(transportsCol)
+  return snaps.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<FlightLeg, 'id'>) }))
 }
-export const upsertTransport = async (_legs: FlightLeg[]): Promise<void> => {
+
+
+export const upsertTransport = async (_leg: FlightLeg): Promise<void> => {
   const user = auth.currentUser
+  const claims = await getClaims(user)
   if (!user) throw new Error('Not authenticated')
-  const countryRef = doc(db, 'countries', user.uid)
+  const transportCol = collection(db, getFolder(getRole(claims)), user.uid, 'transports')
+  const id = _leg.id ?? doc(transportCol).id
+  const ref = doc(transportCol, id)
+  const { id: _omitId, ...data } = _leg
   await setDoc(
-    countryRef,
+    ref,
     {
-      transport: { legs: _legs },
+      ...data,
       updated_at: serverTimestamp(),
     },
     { merge: true },
   )
+}
+
+export const deleteTransport = async (_transportId: string): Promise<void> => {
+  const user = auth.currentUser
+  const claims = await getClaims(user)
+  if (!user) throw new Error('Not authenticated')
+  const ref = doc(db, getFolder(getRole(claims)), user.uid, 'transports', _transportId)
+  await deleteDoc(ref)
 }
 
 // Payments
@@ -120,6 +135,8 @@ export type Team = {
 export type Member = {
   id?: string
   team?: string
+  arrival?: string
+  departure?: string
   role: string
   given_name: string
   last_name: string
@@ -310,7 +327,6 @@ export const adminListJurySummaries = async (): Promise<AdminJurySummary[]> => {
       single_room_reqs: 0,
     }
     rows.forEach ((currentValue) => {
-      console.log(currentValue);
       total.memberCount += (currentValue?.memberCount ?? 0);
       total.subtotal += (currentValue?.subtotal ?? 0);
       total.already_paid += (currentValue?.already_paid ?? 0);
@@ -446,7 +462,6 @@ export const adminListAllJuryMemberMembersDetailed = async (): Promise<AdminJury
     })
 
   }
-  console.log(rows)
   return rows.sort((a, b) => {
     const x = a.jury_member_name.localeCompare(b.jury_member_name)
     if (x == 0) {
@@ -595,7 +610,6 @@ export const adminListPaymentsDetailed = async (): Promise<AdminPaymentRow[]> =>
         singleRooms: 0,
       }
   rows.forEach ((currentValue) => {
-    console.log(currentValue);
     total.subtotal += (currentValue?.subtotal ?? 0);
     total.alreadyPaid += (currentValue?.alreadyPaid ?? 0);
     total.teams += (currentValue?.teams ?? 0);
@@ -603,7 +617,6 @@ export const adminListPaymentsDetailed = async (): Promise<AdminPaymentRow[]> =>
     total.singleRooms += (currentValue?.singleRooms ?? 0);
   }, )
   rows.push(total);
-  console.log(total);
   return rows;
 }
 

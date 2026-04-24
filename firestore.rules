@@ -27,6 +27,11 @@ service cloud.firestore {
         allow read, write: if isAdmin() || isCountryOwner(authUid);
       }
 
+      // /countries/{authUid}/transports/{transportId}
+      match /transports/{transportId} {
+        allow read, write: if isAdmin() || isCountryOwner(authUid);
+      }
+
       // /countries/{authUid}/members/{memberId}
       match /members/{memberId} {
         allow read, write: if isAdmin() || isCountryOwner(authUid);
@@ -40,6 +45,11 @@ service cloud.firestore {
 
       // /juryMembers/{authUid}/members/{memberId}
       match /members/{memberId} {
+        allow read, write: if isAdmin() || isCountryOwner(authUid);
+      }
+
+      // /juryMembers/{authUid}/transports/{transportId}
+      match /transports/{transportId} {
         allow read, write: if isAdmin() || isCountryOwner(authUid);
       }
     }

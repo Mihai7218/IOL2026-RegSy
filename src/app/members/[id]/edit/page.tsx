@@ -39,6 +39,8 @@ export default function EditMemberPage() {
       id: member.id,
       role: member.role as any,
       team: member.team ?? '',
+      arrival: member.arrival ?? '',
+      departure: member.departure ?? '',
       gender: member.gender ?? '',
       ...name,
       acco_req: member.acco_req ?? '',
@@ -64,6 +66,8 @@ export default function EditMemberPage() {
     const m: Member = {
       id: member?.id,
       role: values.role,
+      arrival: values.arrival,
+      departure: values.departure,
       team: values.role === 'Observer' ? '' : (values.team || ''),
       given_name: values.given_name,
       last_name: values.last_name,

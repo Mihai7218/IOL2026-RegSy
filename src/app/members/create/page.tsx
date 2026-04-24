@@ -13,6 +13,8 @@ export default function CreateMemberPage() {
     const m: Member = {
       role: values.role,
       team: values.role === 'Observer' ? '' : (values.team || ''),
+      arrival: values.arrival,
+      departure: values.departure,
       given_name: values.given_name,
       last_name: values.last_name,
       display_name: values.display_name,

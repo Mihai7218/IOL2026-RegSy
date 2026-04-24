@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label'
 import { FieldGroup, FieldError } from '@/components/ui/field'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { fetchTeams, type Team } from '@/services/firebaseApi'
+import { fetchTeams, fetchTransport, FlightLeg, type Team } from '@/services/firebaseApi'
 import { Checkbox } from '@/components/ui/checkbox'
 import { languages } from '@/lib/languages'
 import { cityTourOptions } from '@/lib/cityTour'
@@ -20,6 +20,7 @@ import { excursionOptions } from '@/lib/excursion'
 import { isCountry, isJuryMember } from '@/lib/roles'
 import { useAuth } from '@/context/AuthProvider'
 import { Card, CardContent, CardContentFirst } from './ui/card'
+import { formatDatetimeEEST } from '@/lib/utils'
 
 export type MemberFormValues = MemberSchemaForm & { id?: string }
 
@@ -57,6 +58,7 @@ const FOOD_ALLERGIES = [
 export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partial<MemberFormValues>; onSubmit: (values: MemberFormValues) => Promise<void> | void }) {
   const { claims } = useAuth()
   const [teams, setTeams] = useState<Team[]>([])
+  const [transports, setTransports] = useState<FlightLeg[]>([])
   const [hasPreferences, setHasPreferences] = useState<string>(initialValues?.food_req === undefined || initialValues?.food_req?.length === 0 ? "" : "y")
   const [hasAllergies, setHasAllergies] = useState<string>(initialValues?.other_food_allergies === undefined || initialValues.other_food_allergies === "" ? "" : "y")
 
@@ -66,6 +68,8 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
       id: initialValues?.id,
       role: initialValues?.role ?? '',
       team: initialValues?.team ?? '',
+      arrival: initialValues?.arrival ?? '',
+      departure: initialValues?.departure ?? '',
       given_name: initialValues?.given_name ?? '',
       last_name: initialValues?.last_name ?? '',
       display_name: initialValues?.display_name ?? '',
@@ -94,6 +98,7 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
 
   useEffect(() => {
     fetchTeams().then(setTeams)
+    fetchTransport().then(setTransports)
   }, [])
 
   const isObserver = form.watch('role') === 'Observer'
@@ -101,6 +106,8 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
   const roomType = form.watch('room_type')
   const genderValue = form.watch('gender')
   const teamOptions = useMemo(() => teams.map((t) => ({ id: t.id!, name: t.team_name })), [teams])
+  const arrivalOptions = useMemo(() => transports.filter((fl) => fl.direction == 'arrival').map((t) => ({ id: t.id!, name: `${t.terminal} -> ${t.location} @ ${formatDatetimeEEST(t.datetime)}` })), [transports])
+  const departureOptions = useMemo(() => transports.filter((fl) => fl.direction == 'departure').map((t) => ({ id: t.id!, name: `${t.terminal} -> ${t.location} @ ${formatDatetimeEEST(t.datetime)}` })), [transports])
 
   async function handleSubmit(values: MemberFormValues) {
     await onSubmit({ ...values, id: initialValues?.id })
@@ -468,6 +475,55 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
       </div>
 
       {/* Travel */}
+      <Controller
+        name="arrival"
+        control={form.control}
+        render={({ field }) => (
+          <div>
+            <Label>Arrival (to Bucharest)</Label>
+            <Select value={field.value || undefined} onValueChange={field.onChange}>
+              <SelectTrigger className="mt-1">
+                <SelectValue placeholder="Select arrival" />
+              </SelectTrigger>
+              <SelectContent>
+                {arrivalOptions.map((t) => (
+                  <SelectItem key={t.id} value={t.id}>
+                    {t.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          {form.formState.errors.arrival && (
+            <FieldError errors={[form.formState.errors.arrival]} />
+          )}
+          </div>
+        )}
+      />
+      <Controller
+        name="departure"
+        control={form.control}
+        render={({ field }) => (
+          <div>
+            <Label>Departure (from Bucharest)</Label>
+            <Select value={field.value || undefined} onValueChange={field.onChange}>
+              <SelectTrigger className="mt-1">
+                <SelectValue placeholder="Select departure" />
+              </SelectTrigger>
+              <SelectContent>
+                {departureOptions.map((t) => (
+                  <SelectItem key={t.id} value={t.id}>
+                    {t.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          {form.formState.errors.departure && (
+            <FieldError errors={[form.formState.errors.departure]} />
+          )}
+          </div>
+        )}
+      />
+
       <div className="space-y-3">
         <div className="text-base font-semibold">Travel</div>
         <div>ID Cards are only accepted for EU/EEA/Swiss citizens.</div>

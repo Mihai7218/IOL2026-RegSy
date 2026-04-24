@@ -1,284 +1,290 @@
-'use client'
+"use client"
 
+import { useEffect, useMemo, useState } from 'react'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
-import { Controller, useForm } from 'react-hook-form'
-import * as z from 'zod'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { flightLegSchema, FlightLegForm, TERMINAL_OPTIONS, flightLegFormSchema, FlightLegUiForm } from '@/schemas/transport'
-import { useEffect } from 'react'
-import { fetchTransport, upsertTransport } from '@/services/firebaseApi'
 import { toast } from 'sonner'
-import { FieldGroup } from '@/components/ui/field'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { TransportForm, type TransportFormValues } from '@/components/transportForm'
+import { fetchTransport, upsertTransport, deleteTransport, fetchMembers, type FlightLeg, type Member } from '@/services/firebaseApi'
+import { Separator } from '@/components/ui/separator'
+import { Item, ItemContent, ItemHeader, ItemMedia, ItemTitle } from '@/components/ui/item'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { TERMINAL_OPTIONS } from '@/schemas/transport'
+import { formatDatetimeEEST } from '@/lib/utils'
 
-type FormType = { arrival: FlightLegUiForm; departure: FlightLegUiForm }
+type MemberMap = Record<string, Member[]>
 
-const formSchema = z.object({
-  arrival: flightLegFormSchema,
-  departure: flightLegFormSchema,
-})
-
-const defaultLeg = (direction: 'arrival' | 'departure'): FlightLegUiForm => ({
-  direction,
-  terminal_option: TERMINAL_OPTIONS[0],
-  terminal_other: '',
-  location: '',
-  airline: '',
-  flight_no: '',
-  datetime: new Date().toISOString(),
-})
-
-function toLocalDatetimeInputValue(iso?: string) {
-  if (!iso) return ''
-  // Convert ISO to "YYYY-MM-DDTHH:mm" for datetime-local input
-  const d = new Date(iso)
-  const pad = (n: number) => String(n).padStart(2, '0')
-  const yyyy = d.getFullYear()
-  const mm = pad(d.getMonth() + 1)
-  const dd = pad(d.getDate())
-  const hh = pad(d.getHours())
-  const min = pad(d.getMinutes())
-  return `${yyyy}-${mm}-${dd}T${hh}:${min}`
-}
-
-function fromLocalToISO(value: string) {
-  // value like "YYYY-MM-DDTHH:mm" (local time)
-  const d = new Date(value)
-  return isNaN(d.getTime()) ? '' : d.toISOString()
+const getCapital = (name: string) => {
+  return name
+    .split(" ")
+    .map((n) => (n && n[0] ? n[0].toUpperCase() : ""))
+    .join("")
+    .slice(0, 2);
 }
 
 export default function TransportPage() {
-  const form = useForm<FormType>({
-    resolver: zodResolver(formSchema),
-    defaultValues: { arrival: defaultLeg('arrival'), departure: defaultLeg('departure') },
-  })
+  const [transports, setTransports] = useState<FlightLeg[]>([])
+  const [membersByTransport, setMembersByTransport] = useState<MemberMap>({})
+  const [loading, setLoading] = useState(false)
+  const [createOpen, setCreateOpen] = useState(false)
+  const [editTarget, setEditTarget] = useState<FlightLeg | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<FlightLeg | null>(null)
 
-  useEffect(() => {
-    fetchTransport().then((legs) => {
-      const aRaw = legs.find((l) => l.direction === 'arrival')
-      const dRaw = legs.find((l) => l.direction === 'departure')
-
-      const toUi = (raw: FlightLegForm | undefined, dir: 'arrival'|'departure'): FlightLegUiForm => {
-        if (!raw) return defaultLeg(dir)
-        const inOptions = (TERMINAL_OPTIONS as readonly string[]).includes(raw.terminal as any)
-        return {
-          direction: dir,
-          terminal_option: (inOptions ? (raw.terminal as any) : 'Other') as FlightLegUiForm['terminal_option'],
-          terminal_other: inOptions ? '' : raw.terminal,
-          location: raw.location,
-          airline: raw.airline,
-          flight_no: raw.flight_no,
-          datetime: raw.datetime,
+  async function load() {
+    setLoading(true)
+    try {
+      const [t, m] = await Promise.all([fetchTransport(), fetchMembers()])
+      setTransports(t)
+      const map: MemberMap = {}
+      for (const mem of m) {
+        if (mem.arrival){
+          map[mem.arrival] = map[mem.arrival] || []
+          map[mem.arrival].push(mem)
+        }
+        if (mem.departure) {
+          map[mem.departure] = map[mem.departure] || []
+          map[mem.departure].push(mem)
         }
       }
+      setMembersByTransport(map)
+    } catch (e: any) {
+      toast.error(e?.message ?? 'Failed to load transports')
+    } finally {
+      setLoading(false)
+    }
+  }
 
-      form.reset({ arrival: toUi(aRaw, 'arrival'), departure: toUi(dRaw, 'departure') })
-    })
-    // `form` is stable from `useForm`, safe to omit from deps
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    load()
   }, [])
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  async function handleCreate(values: TransportFormValues) {
+    const terminal = values.terminal_option === TERMINAL_OPTIONS[3] ? values.terminal_other ?? "" : values.terminal_option
     try {
-      // Map UI form to backend FlightLegs
-      const toLeg = (ui: FlightLegUiForm): FlightLegForm => ({
-        direction: ui.direction,
-        terminal: ui.terminal_option === 'Other' ? (ui.terminal_other ?? '') : ui.terminal_option,
-        location: ui.location,
-        airline: ui.airline,
-        flight_no: ui.flight_no,
-        datetime: ui.datetime,
+      await upsertTransport({
+        id: values.id,
+        direction: values.direction,
+        terminal: terminal,
+        location: values.location,
+        flight_no: values.flight_no,
+        airline: values.airline,
+        datetime: values.datetime,
       })
-      console.log('Submitting transport:', values)
-      await upsertTransport([
-        toLeg({ ...values.arrival, direction: 'arrival' }),
-        toLeg({ ...values.departure, direction: 'departure' }),
-      ])
-      toast.success('Transportation details saved')
+      toast.success('Transport saved')
+      setCreateOpen(false)
+      await load()
     } catch (e: any) {
-      toast.error(e?.message ?? 'Failed to save transportation details')
+      toast.error(e?.message ?? 'Failed to save transport')
+    }
+  }
+
+  async function handleEdit(values: TransportFormValues) {
+    const terminal = values.terminal_option === TERMINAL_OPTIONS[3] ? values.terminal_other ?? "" : values.terminal_option
+    try {
+      await upsertTransport({
+        id: values.id,
+        direction: values.direction,
+        terminal: terminal,
+        location: values.location,
+        flight_no: values.flight_no,
+        airline: values.airline,
+        datetime: values.datetime,
+      })
+      toast.success('Transport updated')
+      setEditTarget(null)
+      await load()
+    } catch (e: any) {
+      toast.error(e?.message ?? 'Failed to update transport')
+    }
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget?.id) return
+    try {
+      await deleteTransport(deleteTarget.id)
+      toast.success('Transport deleted')
+      setDeleteTarget(null)
+      await load()
+    } catch (e: any) {
+      toast.error(e?.message ?? 'Failed to delete transport')
     }
   }
 
   return (
     <div className='space-y-4 px-10'>
       <div className='flex items-center justify-between'>
-        <h1 className='text-xl font-semibold'>Transportation</h1>
+        <h1 className='text-xl font-semibold'>Transport</h1>
+        <Button onClick={() => setCreateOpen(true)}>Create transport</Button>
       </div>
-      <Card>
-        <CardContent>
-          <form id='transport-form' onSubmit={form.handleSubmit(onSubmit)}>
-            <div className='pt-4 space-y-6 pr-10'>
-              <div>
-                <div className='font-medium mb-2'>Arrival</div>
-                <FieldGroup>
-                  <div>
-                    <Label>Terminal</Label>
-                    <Controller
-                      name='arrival.terminal_option'
-                      control={form.control}
-                      render={({ field }) => (
-                        <RadioGroup
-                          className='mt-2 grid grid-cols-2 gap-2'
-                          value={field.value}
-                          onValueChange={field.onChange}
-                        >
-                          {TERMINAL_OPTIONS.map((opt) => {
-                            const id = `arr-terminal-${opt}`
-                            return (
-                              <div key={id} className='flex items-center gap-2'>
-                                <RadioGroupItem id={id} value={opt} />
-                                <Label htmlFor={id} className='cursor-pointer'>{opt}</Label>
-                              </div>
-                            )
-                          })}
-                        </RadioGroup>
-                      )}
-                    />
-                    {form.watch('arrival.terminal_option') === 'Other' && (
-                      <div className='mt-2'>
-                        <Label>Specify terminal</Label>
-                        <Input {...form.register('arrival.terminal_other')} placeholder='Enter terminal' />
-                      </div>
-                    )}
-                  </div>
-                  <Controller
-                    name='arrival.location'
-                    control={form.control}
-                    render={({ field }) => (
-                      <div>
-                        <Label>Location</Label>
-                        <Input {...field} />
-                      </div>
-                    )}
-                  />
-                  <Controller
-                    name='arrival.airline'
-                    control={form.control}
-                    render={({ field }) => (
-                      <div>
-                        <Label>Airline</Label>
-                        <Input {...field} />
-                      </div>
-                    )}
-                  />
-                  <Controller
-                    name='arrival.flight_no'
-                    control={form.control}
-                    render={({ field }) => (
-                      <div>
-                        <Label>Flight No.</Label>
-                        <Input {...field} />
-                      </div>
-                    )}
-                  />
-                  <Controller
-                    name='arrival.datetime'
-                    control={form.control}
-                    render={({ field }) => (
-                      <div className='col-span-2'>
-                        <Label>Date & Time</Label>
-                        <Input
-                          type='datetime-local'
-                          value={toLocalDatetimeInputValue(field.value)}
-                          onChange={(e) => field.onChange(fromLocalToISO(e.target.value))}
-                        />
-                      </div>
-                    )}
-                  />
-                </FieldGroup>
-              </div>
 
-              <div>
-                <div className='font-medium mb-2'>Departure</div>
-                <FieldGroup>
-                  <div>
-                    <Label>Terminal</Label>
-                    <Controller
-                      name='departure.terminal_option'
-                      control={form.control}
-                      render={({ field }) => (
-                        <RadioGroup
-                          className='mt-2 grid grid-cols-2 gap-2'
-                          value={field.value}
-                          onValueChange={field.onChange}
-                        >
-                          {TERMINAL_OPTIONS.map((opt) => {
-                            const id = `dep-terminal-${opt}`
-                            return (
-                              <div key={id} className='flex items-center gap-2'>
-                                <RadioGroupItem id={id} value={opt} />
-                                <Label htmlFor={id} className='cursor-pointer'>{opt}</Label>
-                              </div>
-                            )
-                          })}
-                        </RadioGroup>
-                      )}
-                    />
-                    {form.watch('departure.terminal_option') === 'Other' && (
-                      <div className='mt-2'>
-                        <Label>Specify terminal</Label>
-                        <Input {...form.register('departure.terminal_other')} placeholder='Enter terminal' />
-                      </div>
-                    )}
+      <h1 className='text-xl font-semibold'>Arrivals</h1>
+
+      <div className='grid grid-cols-1 gap-4'>
+        {transports.filter((t)=> t.direction==="arrival").map((t) => {
+          const tMembers = membersByTransport[t.id ?? ''] || []
+
+          return (
+            <Card key={t.id ?? `${t.terminal} ${t.location} ${t.datetime}`}>
+              <CardHeader>
+                <div className='flex items-start justify-between gap-4'>
+                  <div className='flex items-center gap-2'>
+                    <Button variant='outline' size='sm' onClick={() => setEditTarget(t)}>Edit</Button>
+                    <Button variant='destructive' size='sm' onClick={() => setDeleteTarget(t)}>Delete</Button>
                   </div>
-                  <Controller
-                    name='departure.location'
-                    control={form.control}
-                    render={({ field }) => (
-                      <div>
-                        <Label>Location</Label>
-                        <Input {...field} />
-                      </div>
-                    )}
-                  />
-                  <Controller
-                    name='departure.airline'
-                    control={form.control}
-                    render={({ field }) => (
-                      <div>
-                        <Label>Airline</Label>
-                        <Input {...field} />
-                      </div>
-                    )}
-                  />
-                  <Controller
-                    name='departure.flight_no'
-                    control={form.control}
-                    render={({ field }) => (
-                      <div>
-                        <Label>Flight No.</Label>
-                        <Input {...field} />
-                      </div>
-                    )}
-                  />
-                  <Controller
-                    name='departure.datetime'
-                    control={form.control}
-                    render={({ field }) => (
-                      <div className='col-span-2'>
-                        <Label>Date & Time</Label>
-                        <Input
-                          type='datetime-local'
-                          value={toLocalDatetimeInputValue(field.value)}
-                          onChange={(e) => field.onChange(fromLocalToISO(e.target.value))}
-                        />
-                      </div>
-                    )}
-                  />
-                </FieldGroup>
-              </div>
+                </div>
+              </CardHeader>
+              <CardContent className='space-y-3'>
+                <div className='text-sm'>Origin: <span className='font-medium'>{t.location || '—'}</span></div>
+                <div className='text-sm'>Arrival location in Bucharest: <span className='font-medium'>{t.terminal || '—'}</span></div>
+                <div className='text-sm'>Date/Time: <span className='font-medium'>{formatDatetimeEEST(t.datetime || '—')}</span></div>
+                <div className='text-sm'>Transport no.: <span className='font-medium'>{t.flight_no || '—'}</span></div>
+                <div className='text-sm'>Transport operator: <span className='font-medium'>{t.airline || '—'}</span></div>
+
+                <div className='pt-2'>
+                  <div className='text-sm font-medium mb-2'>Members</div>
+                  <Separator className='mb-2' />
+                  {tMembers.length ? (
+                    <div className='flex flex-col gap-2'>
+                      {tMembers.map((m) => (
+                        <Item key={m.id ?? m.display_name} variant='muted'>
+                          <ItemMedia variant='icon'>
+                            <Avatar>
+                              <AvatarImage src="/avatars/02.png" />
+                              <AvatarFallback>{getCapital(m.display_name)}</AvatarFallback>
+                            </Avatar>
+                          </ItemMedia>
+                          <ItemContent>
+                            <ItemHeader>
+                              <ItemTitle>{m.display_name}</ItemTitle>
+                            </ItemHeader>
+                          </ItemContent>
+                        </Item>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className='text-sm text-muted-foreground'>No members yet</div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )
+        })}
+      </div>
+
+      <h1 className='text-xl font-semibold'>Departures</h1>
+
+      <div className='grid grid-cols-1 gap-4'>
+        {transports.filter((t)=> t.direction==="departure").map((t) => {
+          const tMembers = membersByTransport[t.id ?? ''] || []
+          return (
+            <Card key={t.id ?? `${t.terminal} ${t.location} ${t.datetime}`}>
+              <CardHeader>
+                <div className='flex items-start justify-between gap-4'>
+                  <div className='flex items-center gap-2'>
+                    <Button variant='outline' size='sm' onClick={() => setEditTarget(t)}>Edit</Button>
+                    <Button variant='destructive' size='sm' onClick={() => setDeleteTarget(t)}>Delete</Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className='space-y-3'>
+                <div className='text-sm'>Destination: <span className='font-medium'>{t.location || '—'}</span></div>
+                <div className='text-sm'>Departure location from Bucharest: <span className='font-medium'>{t.terminal || '—'}</span></div>
+                <div className='text-sm'>Date/Time: <span className='font-medium'>{formatDatetimeEEST(t.datetime || '—')}</span></div>
+                <div className='text-sm'>Transport no.: <span className='font-medium'>{t.flight_no || '—'}</span></div>
+                <div className='text-sm'>Transport operator: <span className='font-medium'>{t.airline || '—'}</span></div>
+
+                <div className='pt-2'>
+                  <div className='text-sm font-medium mb-2'>Members</div>
+                  <Separator className='mb-2' />
+                  {tMembers.length ? (
+                    <div className='flex flex-col gap-2'>
+                      {tMembers.map((m) => (
+                        <Item key={m.id ?? m.display_name} variant='muted'>
+                          <ItemMedia variant='icon'>
+                            <Avatar>
+                              <AvatarImage src="/avatars/02.png" />
+                              <AvatarFallback>{getCapital(m.display_name)}</AvatarFallback>
+                            </Avatar>
+                          </ItemMedia>
+                          <ItemContent>
+                            <ItemHeader>
+                              <ItemTitle>{m.display_name}</ItemTitle>
+                            </ItemHeader>
+                          </ItemContent>
+                        </Item>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className='text-sm text-muted-foreground'>No contestants yet</div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )
+        })}
+      </div>
+
+      {/* Create dialog */}
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create transport</DialogTitle>
+            <DialogDescription>Fill in the transport details.</DialogDescription>
+          </DialogHeader>
+          <TransportForm onSubmit={handleCreate} />
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit dialog */}
+      <Dialog open={!!editTarget} onOpenChange={(open) => !open && setEditTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit transport</DialogTitle>
+            <DialogDescription>Modify the transport information.</DialogDescription>
+          </DialogHeader>
+          {editTarget && (
+            <TransportForm
+              initialValues={{
+                id: editTarget.id,
+                direction: editTarget.direction,
+                terminal_option: editTarget.terminal === "✈️ Henri Coandă/Otopeni Airport (OTP)" ? "✈️ Henri Coandă/Otopeni Airport (OTP)" : editTarget.terminal === "✈️ Aurel Vlaicu/Băneasa Airport (BBU)" ? "✈️ Aurel Vlaicu/Băneasa Airport (BBU)" : editTarget.terminal === "🚂 Gara de Nord/București Nord/North Railway Station" ? "🚂 Gara de Nord/București Nord/North Railway Station" : "❓ Other",
+                terminal_other: TERMINAL_OPTIONS.slice(0,3).find((x) => x === editTarget.terminal) ? "" : editTarget.terminal,
+                location: editTarget.location,
+                flight_no: editTarget.flight_no,
+                airline: editTarget.airline,
+                datetime: editTarget.datetime,
+              }}
+              onSubmit={handleEdit}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete confirm dialog */}
+      <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete transport</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this transport? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <div className='flex w-full justify-end gap-2'>
+              <Button variant='outline' onClick={() => setDeleteTarget(null)}>Cancel</Button>
+              <Button variant='destructive' onClick={confirmDelete}>Delete</Button>
             </div>
-
-            <Button type='submit' form='transport-form' className='mt-4'>
-              Save
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

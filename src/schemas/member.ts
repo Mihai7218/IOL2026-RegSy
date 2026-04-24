@@ -5,6 +5,8 @@ export const memberFormSchema = z.object({
   // Personal Information
   role: z.string().min(1, 'Role is required'),
   team: z.string().optional(),
+  arrival: z.string().optional(),
+  departure: z.string().optional(),
   given_name: z.string().min(1, 'First name is required'),
   last_name: z.string().min(1, 'Last name is required'),
   display_name: z.string().min(1, 'Badge name is required'),

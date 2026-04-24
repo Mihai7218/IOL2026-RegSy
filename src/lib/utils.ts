@@ -21,4 +21,24 @@ export function getFolder(role: Role) : string {
   }
 }
 
+export function formatDatetimeEEST(iso?: string) {
+  if (!iso) return '—'
+  try {
+    const d = new Date(iso)
+    const pad = (n: number) => String(n).padStart(2, '0')
+    
+    const eestDate = new Date(d.getTime() + 3 * 60 * 60 * 1000)
+    
+    const yyyy = eestDate.getUTCFullYear()
+    const mm = pad(eestDate.getUTCMonth() + 1)
+    const dd = pad(eestDate.getUTCDate())
+    const hh = pad(eestDate.getUTCHours())
+    const min = pad(eestDate.getUTCMinutes())
+    
+    return `${dd}/${mm}/${yyyy} ${hh}:${min}`
+  } catch {
+    return iso
+  }
+}
+
 export const getRole = (claims : Claims | undefined) => claims?.country ? "country" : claims?.juryMember ? "jury" : claims?.volunteer ? "volunteer" : claims?.locMember ? "loc" : "guest"

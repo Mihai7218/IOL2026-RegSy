@@ -70,9 +70,9 @@ export default function TeamsPage() {
         excursion_route: values.excursion_route,
       })
       for (const m of values.participants ?? []) {
-        await upsertMemberTeam(m, id)
+        if (m !== "") await upsertMemberTeam(m, id)
       }
-      await upsertMemberTeam(values.tl, id)
+      if (values.tl !== "") await upsertMemberTeam(values.tl, id)
       toast.success('Team saved')
       setCreateOpen(false)
       await load()
@@ -91,13 +91,13 @@ export default function TeamsPage() {
         excursion_route: values.excursion_route,
       })
       for (const m of values.participants ?? []) {
-        await upsertMemberTeam(m, "")
+        if (m !== "") await upsertMemberTeam(m, "")
       }
-      await upsertMemberTeam(values.tl, "")
+      if (values.tl !== "") await upsertMemberTeam(values.tl, "")
       for (const m of values.participants ?? []) {
-        await upsertMemberTeam(m, id)
+        if (m !== "") await upsertMemberTeam(m, id)
       }
-      await upsertMemberTeam(values.tl, id)
+      if (values.tl !== "") await upsertMemberTeam(values.tl, id)
       toast.success('Team updated')
       setEditTarget(null)
       await load()

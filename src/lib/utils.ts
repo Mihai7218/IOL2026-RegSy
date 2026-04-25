@@ -1,6 +1,7 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { Claims, Role } from "./roles"
+import { FunnelIcon } from "lucide-react"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -42,3 +43,7 @@ export function formatDatetimeEEST(iso?: string) {
 }
 
 export const getRole = (claims : Claims | undefined) => claims?.country ? "country" : claims?.juryMember ? "jury" : claims?.volunteer ? "volunteer" : claims?.locMember ? "loc" : "guest"
+
+export function setEquality<T>(a: Set<T>, b: Set<T>): boolean {
+  return a.size == b.size && [...a].every((x) => b.has(x))
+}

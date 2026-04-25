@@ -10,16 +10,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { FieldError, FieldGroup } from "@/components/ui/field"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { fetchMembers, Member } from "@/services/firebaseApi"
 import { useEffect, useMemo, useState } from "react"
 import { Checkbox } from "@/components/ui/checkbox"
+import { setEquality } from "@/lib/utils"
 
 export type TransportFormValues = FlightLegForm & { id?: string, members: string[]}
 
@@ -240,6 +234,16 @@ export function TransportForm({
           <div className="col-span-2">
             <Label>Members</Label>
             <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <label key="all" className="flex items-center gap-2">
+                <Checkbox
+                  checked={setEquality(new Set(members.map((x) => x.id)), new Set(field.value))}
+                  onCheckedChange={(v) => {
+                    if (v) field.onChange(members.map((x) => x.id))
+                    else field.onChange([])
+                  }}
+                />
+                <span>Select all</span>
+              </label>
               {memberOptions.map((opt) => {
                 const checked = (field.value ?? []).includes(opt.id)
                 return (

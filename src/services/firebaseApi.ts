@@ -173,7 +173,7 @@ export const fetchTeams = async (): Promise<Team[]> => {
   return snaps.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Team, 'id'>) }))
 }
 
-export const upsertTeam = async (_team: Team): Promise<void> => {
+export const upsertTeam = async (_team: Team): Promise<string> => {
   const user = auth.currentUser
   if (!user) throw new Error('Not authenticated')
   const teamsCol = collection(db, 'countries', user.uid, 'teams')
@@ -188,6 +188,7 @@ export const upsertTeam = async (_team: Team): Promise<void> => {
     },
     { merge: true },
   )
+  return id
 }
 
 export const deleteTeam = async (_teamId: string): Promise<void> => {
@@ -220,6 +221,25 @@ export const upsertMember = async (_member: Member): Promise<void> => {
   await setDoc(
     ref,
     {
+      ...data,
+      updated_at: serverTimestamp(),
+    },
+    { merge: true },
+  )
+}
+
+export const upsertMemberTeam = async (_id: string, _team: string): Promise<void> => {
+  const user = auth.currentUser
+  const claims = await getClaims(user)
+  if (!user) throw new Error('Not authenticated')
+  const memberDoc = doc(db, getFolder(getRole(claims)), user.uid, 'members', _id)
+  const member = await getDoc(memberDoc)
+  const { id: _omitId, team: _omitTeam, ...data } = member.data()!
+
+  await setDoc(
+    memberDoc,
+    {  
+      team: _team,
       ...data,
       updated_at: serverTimestamp(),
     },

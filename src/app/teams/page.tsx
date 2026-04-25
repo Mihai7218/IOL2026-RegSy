@@ -14,7 +14,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { TeamForm, type TeamFormValues } from '@/components/teamForm'
-import { deleteTeam, fetchMembers, fetchTeams, type Team, type Member, upsertTeam } from '@/services/firebaseApi'
+import { deleteTeam, fetchMembers, fetchTeams, type Team, type Member, upsertTeam, upsertMemberTeam } from '@/services/firebaseApi'
 import { Separator } from '@/components/ui/separator'
 import { Item, ItemContent, ItemHeader, ItemMedia, ItemTitle } from '@/components/ui/item'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -62,13 +62,17 @@ export default function TeamsPage() {
 
   async function handleCreate(values: TeamFormValues) {
     try {
-      await upsertTeam({
+      const id = await upsertTeam({
         id: values.id,
         team_name: values.team_name,
         team_language: values.team_language,
         city_tour: values.city_tour,
         excursion_route: values.excursion_route,
       })
+      for (const m of values.participants ?? []) {
+        await upsertMemberTeam(m, id)
+      }
+      await upsertMemberTeam(values.tl, id)
       toast.success('Team saved')
       setCreateOpen(false)
       await load()
@@ -79,13 +83,21 @@ export default function TeamsPage() {
 
   async function handleEdit(values: TeamFormValues) {
     try {
-      await upsertTeam({
+      const id = await upsertTeam({
         id: values.id,
         team_name: values.team_name,
         team_language: values.team_language,
         city_tour: values.city_tour,
         excursion_route: values.excursion_route,
       })
+      for (const m of values.participants ?? []) {
+        await upsertMemberTeam(m, "")
+      }
+      await upsertMemberTeam(values.tl, "")
+      for (const m of values.participants ?? []) {
+        await upsertMemberTeam(m, id)
+      }
+      await upsertMemberTeam(values.tl, id)
       toast.success('Team updated')
       setEditTarget(null)
       await load()
@@ -311,6 +323,8 @@ export default function TeamsPage() {
                 team_language: editTarget.team_language,
                 city_tour: editTarget.city_tour,
                 excursion_route: editTarget.excursion_route,
+                participants: (membersByTeam[editTarget.id!] ?? []).filter((x) => x.role === "Team Contestant").map((x) => x.id!),
+                tl: (membersByTeam[editTarget.id!] ?? []).filter((x) => x.role === "Team Leader")[0].id ?? "",
               }}
               onSubmit={handleEdit}
             />

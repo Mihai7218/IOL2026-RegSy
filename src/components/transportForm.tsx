@@ -17,8 +17,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { fetchMembers, Member } from "@/services/firebaseApi"
+import { useEffect, useMemo, useState } from "react"
+import { Checkbox } from "@/components/ui/checkbox"
 
-export type TransportFormValues = FlightLegForm & { id?: string }
+export type TransportFormValues = FlightLegForm & { id?: string, members: string[]}
 
 export const DIRECTION = ['arrival', 'departure']
 
@@ -31,6 +34,8 @@ export function TransportForm({
   initialValues?: Partial<TransportFormValues>
   onSubmit: (values: TransportFormValues) => Promise<void> | void
 }) {
+  const [members, setMembers] = useState<Member[]>([])
+
   const form = useForm<TransportFormValues>({
     resolver: zodResolver(flightLegFormSchema as unknown as z.ZodType<FlightLegForm>),
     defaultValues: {
@@ -42,15 +47,24 @@ export function TransportForm({
       flight_no: initialValues?.flight_no ?? "",
       datetime: initialValues?.datetime ?? "",
       id: initialValues?.id,
+      members: initialValues?.members ?? [],
     },
   })
+  
+  useEffect(() => {
+      fetchMembers().then(setMembers)
+    }, [])
+
+  const membersSelected = form.watch('members')
+
 
   async function handleSubmit(values: TransportFormValues) {
     // Preserve id even though it's not part of the zod schema (zod strips unknown by default)
-    await onSubmit({ ...values, id: initialValues?.id })
+    await onSubmit({ ...values, id: initialValues?.id, members: membersSelected })
   }
 
   const terminalValue = form.watch('terminal_option')
+  const memberOptions = useMemo(() => members.map((m) => ({ id: m.id!, name: m.display_name })), [members])
 
   function toLocalDatetimeInputValue(iso?: string) {
     if (!iso) return ''
@@ -218,6 +232,35 @@ export function TransportForm({
           )}
         />
       </FieldGroup>
+
+      <Controller
+        name="members"
+        control={form.control}
+        render={({ field }) => (
+          <div className="col-span-2">
+            <Label>Members</Label>
+            <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {memberOptions.map((opt) => {
+                const checked = (field.value ?? []).includes(opt.id)
+                return (
+                  <label key={opt.id} className="flex items-center gap-2">
+                    <Checkbox
+                      checked={checked}
+                      onCheckedChange={(v) => {
+                        const current = new Set(field.value ?? [])
+                        if (v) current.add(opt.id)
+                        else current.delete(opt.id)
+                        field.onChange(Array.from(current))
+                      }}
+                    />
+                    <span>{opt.name}</span>
+                  </label>
+                )
+              })}
+            </div>
+          </div>
+        )}
+      />
 
       <Button type="submit" form="transport-form">Save</Button>
     </form>

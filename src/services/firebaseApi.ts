@@ -85,13 +85,14 @@ export const fetchTransport = async (): Promise<FlightLeg[]> => {
 }
 
 
-export const upsertTransport = async (_leg: FlightLeg): Promise<void> => {
+export const upsertTransport = async (_leg: FlightLeg): Promise<string> => {
   const user = auth.currentUser
   const claims = await getClaims(user)
   if (!user) throw new Error('Not authenticated')
   const transportCol = collection(db, getFolder(getRole(claims)), user.uid, 'transports')
   const id = _leg.id ?? doc(transportCol).id
   const ref = doc(transportCol, id)
+  console.log(id)
   const { id: _omitId, ...data } = _leg
   await setDoc(
     ref,
@@ -101,6 +102,7 @@ export const upsertTransport = async (_leg: FlightLeg): Promise<void> => {
     },
     { merge: true },
   )
+  return id
 }
 
 export const deleteTransport = async (_transportId: string): Promise<void> => {
@@ -218,6 +220,28 @@ export const upsertMember = async (_member: Member): Promise<void> => {
   await setDoc(
     ref,
     {
+      ...data,
+      updated_at: serverTimestamp(),
+    },
+    { merge: true },
+  )
+}
+
+export const upsertMemberTransport = async (_id: string, _transport: string, _direction: string): Promise<void> => {
+  const user = auth.currentUser
+  const claims = await getClaims(user)
+  if (!user) throw new Error('Not authenticated')
+  const memberDoc = doc(db, getFolder(getRole(claims)), user.uid, 'members', _id)
+  const member = await getDoc(memberDoc)
+  const { id: _omitId, departure: _omitDeparture, arrival: _omitArrival, ...data } = member.data()!
+  const newDeparture = _direction === 'departure' ? _transport : _omitDeparture
+  const newArrival = _direction === 'arrival' ? _transport : _omitArrival
+
+  await setDoc(
+    memberDoc,
+    {  
+      departure: newDeparture,
+      arrival: newArrival,
       ...data,
       updated_at: serverTimestamp(),
     },

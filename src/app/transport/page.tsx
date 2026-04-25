@@ -13,7 +13,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { TransportForm, type TransportFormValues } from '@/components/transportForm'
-import { fetchTransport, upsertTransport, deleteTransport, fetchMembers, type FlightLeg, type Member } from '@/services/firebaseApi'
+import { fetchTransport, upsertTransport, deleteTransport, fetchMembers, type FlightLeg, type Member, upsertMember, upsertMemberTransport } from '@/services/firebaseApi'
 import { Separator } from '@/components/ui/separator'
 import { Item, ItemContent, ItemHeader, ItemMedia, ItemTitle } from '@/components/ui/item'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -67,9 +67,10 @@ export default function TransportPage() {
   }, [])
 
   async function handleCreate(values: TransportFormValues) {
+    console.log(values)
     const terminal = values.terminal_option === TERMINAL_OPTIONS[3] ? values.terminal_other ?? "" : values.terminal_option
     try {
-      await upsertTransport({
+      const id = await upsertTransport({
         id: values.id,
         direction: values.direction,
         terminal: terminal,
@@ -78,6 +79,9 @@ export default function TransportPage() {
         airline: values.airline,
         datetime: values.datetime,
       })
+      for (const m of values.members ?? []) {
+        await upsertMemberTransport(m, id, values.direction)
+      }
       toast.success('Transport saved')
       setCreateOpen(false)
       await load()
@@ -86,10 +90,10 @@ export default function TransportPage() {
     }
   }
 
-  async function handleEdit(values: TransportFormValues) {
+  async function handleEdit(oldMembers: string[], values: TransportFormValues) {
     const terminal = values.terminal_option === TERMINAL_OPTIONS[3] ? values.terminal_other ?? "" : values.terminal_option
     try {
-      await upsertTransport({
+      const id = await upsertTransport({
         id: values.id,
         direction: values.direction,
         terminal: terminal,
@@ -98,6 +102,12 @@ export default function TransportPage() {
         airline: values.airline,
         datetime: values.datetime,
       })
+      for (const m of oldMembers ?? []) {
+        await upsertMemberTransport(m, "", values.direction)
+      }
+      for (const m of values.members ?? []) {
+        await upsertMemberTransport(m, id, values.direction)
+      }
       toast.success('Transport updated')
       setEditTarget(null)
       await load()
@@ -261,8 +271,9 @@ export default function TransportPage() {
                 flight_no: editTarget.flight_no,
                 airline: editTarget.airline,
                 datetime: editTarget.datetime,
+                members: (membersByTransport[editTarget.id!] ?? []).map((x) => x.id!)
               }}
-              onSubmit={handleEdit}
+              onSubmit={(x) => handleEdit((membersByTransport[editTarget.id!] ?? []).map((x) => x.id!), x)}
             />
           )}
         </DialogContent>

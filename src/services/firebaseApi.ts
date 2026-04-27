@@ -254,8 +254,8 @@ export const upsertMemberTransport = async (_id: string, _transport: string, _di
   const memberDoc = doc(db, getFolder(getRole(claims)), user.uid, 'members', _id)
   const member = await getDoc(memberDoc)
   const { id: _omitId, departure: _omitDeparture, arrival: _omitArrival, ...data } = member.data()!
-  const newDeparture = _direction === 'departure' ? _transport : _omitDeparture
-  const newArrival = _direction === 'arrival' ? _transport : _omitArrival
+  const newDeparture = (_direction === 'departure' ? _transport : _omitDeparture) ?? ""
+  const newArrival = (_direction === 'arrival' ? _transport : _omitArrival) ?? ""
 
   await setDoc(
     memberDoc,

@@ -7,7 +7,7 @@ import { useAuth } from '@/context/AuthProvider'
 import { getClaims } from '@/lib/claims'
 import { auth, db } from '@/lib/firebase'
 import { Language, languages } from '@/lib/languages'
-import { getFolder, getRole } from '@/lib/utils'
+import { formatDatetimeEEST, getFolder, getRole } from '@/lib/utils'
 import { PaymentStep } from '@/schemas/payment'
 import {
   collection,
@@ -22,6 +22,7 @@ import {
   where,
 } from 'firebase/firestore'
 import { number } from 'zod'
+import { terminalOptionSchema } from '@/schemas/transport'
 
 // Contacts - aligned with contactSchema in src/schemas/contact.ts
 export type Contact = {
@@ -450,6 +451,146 @@ export const adminListAllTeamsDetailed = async (): Promise<AdminTeamRow[]> => {
   }
   return rows.sort((a, b) => a.country_name.localeCompare(b.country_name))
 }
+
+export type AdminTransportRow = {
+  id: string
+  member: string
+  name: string
+  datetime: string
+  location_BUH: string
+  location_OTH: string
+  airline: string
+  flight_no: string
+}
+
+const locationConverter = (original: string) => {
+  switch (original) {
+    case "✈️ Henri Coandă/Otopeni Airport (OTP)":
+      return "Otopeni"
+    case "✈️ Aurel Vlaicu/Băneasa Airport (BBU)":
+      return "Băneasa"
+    case "🚂 Gara de Nord/București Nord/North Railway Station":
+      return "Gara de Nord"
+  }
+  return original
+
+}
+
+const adminListAllTransportsDetailed = async (type: 'arrival' | 'departure'): Promise<AdminTransportRow[]> => {
+  const countriesSnap = await getDocs(collection(db, 'countries'))
+  const jurySnap = await getDocs(collection(db, 'juryMembers'))
+  const rows: AdminTransportRow[] = []
+  for (const countryDoc of countriesSnap.docs.filter(adminTestFilter)) {
+    const data = countryDoc.data() as any
+    const transportsSnap = await getDocs(collection(db, 'countries', countryDoc.id, 'transports'))
+    const membersSnap = await getDocs(collection(db, 'countries', countryDoc.id, 'members'))
+    
+    const transportMap = new Map<string, FlightLeg>()
+    transportsSnap.forEach((transportDoc) => {
+      const transport = transportDoc.data() as FlightLeg
+      transportMap.set(transportDoc.id, transport)
+    })
+
+    const name = data?.country_name ?? countryDoc.id
+
+    membersSnap.forEach((memberDoc) => {
+      const member = memberDoc.data() as Member 
+      if (type == 'departure' && member.departure) {
+        const transport = transportMap.get(member.departure)
+        if (transport) {
+          rows.push({
+            id: memberDoc.id,
+            name: name,
+            member: member.display_name,
+            datetime: formatDatetimeEEST(transport.datetime),
+            location_BUH: locationConverter(transport.terminal),
+            location_OTH: transport.location,
+            airline: transport.airline,
+            flight_no: transport.flight_no,
+          })
+        }
+      }
+      if (type == 'arrival' && member.arrival) {
+        const transport = transportMap.get(member.arrival)
+        if (transport) {
+          rows.push({
+            id: memberDoc.id,
+            name: name,
+            member: member.display_name,
+            datetime: formatDatetimeEEST(transport.datetime),
+            location_BUH: locationConverter(transport.terminal),
+            location_OTH: transport.location,
+            airline: transport.airline,
+            flight_no: transport.flight_no,
+          })
+        }
+      }
+    })
+  }
+  for (const juryDoc of jurySnap.docs.filter(adminTestFilter)) {
+    const data = juryDoc.data() as any
+    const transportsSnap = await getDocs(collection(db, 'juryMembers', juryDoc.id, 'transports'))
+    const membersSnap = await getDocs(collection(db, 'juryMembers', juryDoc.id, 'members'))
+    
+    const transportMap = new Map<string, FlightLeg>()
+    transportsSnap.forEach((transportDoc) => {
+      const transport = transportDoc.data() as FlightLeg
+      transportMap.set(transportDoc.id, transport)
+    })
+
+    const name = data?.jury_member_name ?? juryDoc.id
+
+    membersSnap.forEach((memberDoc) => {
+      const member = memberDoc.data() as Member 
+      if (type == 'departure' && member.departure) {
+        const transport = transportMap.get(member.departure)
+        if (transport) {
+          rows.push({
+            id: memberDoc.id,
+            name: name,
+            member: member.display_name,
+            datetime: formatDatetimeEEST(transport.datetime),
+            location_BUH: locationConverter(transport.terminal),
+            location_OTH: transport.location,
+            airline: transport.airline,
+            flight_no: transport.flight_no,
+          })
+        }
+      }
+      if (type == 'arrival' && member.arrival) {
+        const transport = transportMap.get(member.arrival)
+        if (transport) {
+          rows.push({
+            id: memberDoc.id,
+            name: name,
+            member: member.display_name,
+            datetime: formatDatetimeEEST(transport.datetime),
+            location_BUH: locationConverter(transport.terminal),
+            location_OTH: transport.location,
+            airline: transport.airline,
+            flight_no: transport.flight_no,
+          })
+        }
+      }
+    })
+  }
+  return rows.sort((a, b) => {
+    const datetimeComp = a.datetime.localeCompare(b.datetime)
+    if (datetimeComp !== 0) return datetimeComp
+    else {
+      const flightComp = a.flight_no.localeCompare(b.flight_no)
+      if (flightComp !== 0) return flightComp
+      else {
+        const nameComp = a.name.localeCompare(b.name)
+        if (nameComp !== 0) return nameComp
+        else return a.member.localeCompare(b.member)
+      }
+    }
+  })
+}
+
+export const adminListAllArrivalsDetailed = () => adminListAllTransportsDetailed('arrival')
+export const adminListAllDeparturesDetailed = () => adminListAllTransportsDetailed('departure')
 
 export type AdminMemberRow = Member & {
   countryId: string

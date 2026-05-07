@@ -19,6 +19,8 @@ const NAV_LINKS = [
   { label: 'Jury Payment', href: '/admin/jury' },
   { label: 'Languages', href: '/admin/languages' },
   { label: 'Payment', href: '/admin/payments' },
+  { label: 'Arrivals', href: '/admin/arrivals' },
+  { label: 'Departures', href: '/admin/departures' },
   { label: 'Sightseeing', href: '/admin/sightseeing' },
   { label: 'Invites', href: '/admin/invites' },
 ]

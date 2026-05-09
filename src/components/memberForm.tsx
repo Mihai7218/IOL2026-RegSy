@@ -388,6 +388,16 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
                 </div>
               )}
             />
+            <Controller
+            name="accessibility_needs"
+            control={form.control}
+            render={({ field }) => (
+              <div>
+                <Label>Does the student have any accessibility requirements for the individual or team contests?</Label>
+                <Input placeholder="Enter requirement (if any)..." {...field} />
+              </div>
+            )}
+          />
         </FieldGroup>
       </div>)}
 

@@ -80,6 +80,7 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
       date_of_birth: initialValues?.date_of_birth ?? '',
       tshirt_size: initialValues?.tshirt_size ?? '',
       indiv_language: initialValues?.indiv_language ?? '',
+      accessibility_needs: initialValues?.accessibility_needs ?? '',
       document_type: initialValues?.document_type ?? '',
       room_type: initialValues?.room_type ?? 'Shared room',
       roommate_preference: initialValues?.roommate_preference ?? '',

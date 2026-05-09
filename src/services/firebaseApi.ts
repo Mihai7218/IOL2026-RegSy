@@ -151,6 +151,7 @@ export type Member = {
   date_of_birth: string
   tshirt_size: string
   indiv_language?: string
+  accessibility_needs?: string
   room_type: string
   roommate_preference?: string
   document_type: string

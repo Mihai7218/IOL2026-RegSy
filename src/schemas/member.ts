@@ -18,6 +18,7 @@ export const memberFormSchema = z.object({
 
   // Contest Information
   indiv_language: z.string().optional(),
+  accessibility_needs: z.string().optional(),
 
   // Accommodation
   acco_req: z.string().optional(),

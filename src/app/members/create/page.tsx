@@ -25,6 +25,7 @@ export default function CreateMemberPage() {
       date_of_birth: values.date_of_birth,
       tshirt_size: values.tshirt_size,
       indiv_language: values.indiv_language ?? '',
+      accessibility_needs: values.accessibility_needs ?? '',
       room_type: values.room_type ?? '',
       roommate_preference: values.roommate_preference ?? '',
       document_type: values.document_type ?? '',

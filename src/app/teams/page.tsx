@@ -324,7 +324,7 @@ export default function TeamsPage() {
                 city_tour: editTarget.city_tour,
                 excursion_route: editTarget.excursion_route,
                 participants: (membersByTeam[editTarget.id!] ?? []).filter((x) => x.role === "Team Contestant").map((x) => x.id!),
-                tl: (membersByTeam[editTarget.id!] ?? []).filter((x) => x.role === "Team Leader")[0].id ?? "",
+                tl: ((membersByTeam[editTarget.id!] ?? []).filter((x) => x.role === "Team Leader").pop() ?? {"id": ""}).id ?? "",
               }}
               onSubmit={handleEdit}
             />

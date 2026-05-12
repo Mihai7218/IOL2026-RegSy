@@ -90,10 +90,10 @@ export default function TeamsPage() {
         city_tour: values.city_tour,
         excursion_route: values.excursion_route,
       })
-      for (const m of values.participants ?? []) {
+      for (const m of (membersByTeam[values.id ?? ""] ?? []).filter((x) => x.role === "Team Contestant").map((x) => x.id!) ?? []) {
         if (m !== "") await upsertMemberTeam(m, "")
       }
-      if (values.tl !== "") await upsertMemberTeam(values.tl, "")
+      await upsertMemberTeam(((membersByTeam[values.id ?? ""] ?? []).filter((x) => x.role === "Team Leader").pop() ?? {"id": ""}).id ?? "", "")
       for (const m of values.participants ?? []) {
         if (m !== "") await upsertMemberTeam(m, id)
       }

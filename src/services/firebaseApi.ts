@@ -231,6 +231,7 @@ export const upsertMember = async (_member: Member): Promise<void> => {
 }
 
 export const upsertMemberTeam = async (_id: string, _team: string): Promise<void> => {
+  if (_id == "" || _id == undefined) return
   const user = auth.currentUser
   const claims = await getClaims(user)
   if (!user) throw new Error('Not authenticated')

@@ -44,6 +44,7 @@ export default function EditMemberPage() {
       gender: member.gender ?? '',
       ...name,
       acco_req: member.acco_req ?? '',
+      room_type: member.room_type ?? '',
       other_gender: member.other_gender ?? '',
       date_of_birth: member.date_of_birth,
       tshirt_size: member.tshirt_size,

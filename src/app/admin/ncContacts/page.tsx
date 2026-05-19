@@ -4,17 +4,18 @@ import { useEffect, useState } from 'react'
 import { ColumnDef } from '@tanstack/react-table'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { DataTable } from '@/components/dataTable'
-import { AdminJuryMemberRow, adminListAllJuryMemberMembersDetailed, adminListAllMembersDetailed } from '@/services/firebaseApi'
+import { adminListNCContactsDetailed, type AdminNCContactRow } from '@/services/firebaseApi'
 
-const columns: ColumnDef<AdminJuryMemberRow>[] = [
-  { accessorKey: 'display_name', header: 'Name' },
-  { accessorKey: 'role', header: 'Role' },
-  { accessorKey: 'gender', header: 'Gender' },
-  { accessorKey: 'room_type', header: 'Room type' },
+const columns: ColumnDef<AdminNCContactRow>[] = [
+  { accessorKey: 'jury_member_name', header: 'Account name' },
+  { accessorKey: 'primary_name', header: 'Primary contact' },
+  { accessorKey: 'primary_email', header: 'Primary email' },
+  { accessorKey: 'primary_phone', header: 'Primary phone' },
+  { accessorKey: 'primary_whatsapp', header: 'Primary WhatsApp' },
 ]
 
-export default function AdminJuryMemberMembersPage() {
-  const [rows, setRows] = useState<AdminJuryMemberRow[]>([])
+export default function AdminContactsPage() {
+  const [rows, setRows] = useState<AdminNCContactRow[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -22,10 +23,10 @@ export default function AdminJuryMemberMembersPage() {
     let mounted = true
     ;(async () => {
       try {
-        const data = await adminListAllJuryMemberMembersDetailed()
+        const data = await adminListNCContactsDetailed()
         if (mounted) setRows(data)
       } catch (err: any) {
-        if (mounted) setError(err?.message ?? 'Unable to load members')
+        if (mounted) setError(err?.message ?? 'Unable to load contacts')
       } finally {
         if (mounted) setLoading(false)
       }
@@ -38,7 +39,10 @@ export default function AdminJuryMemberMembersPage() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Members (Jury/LOC/Volunteers)</CardTitle>
+        <CardTitle>Contacts (Jury/LOC/Volunteers)</CardTitle>
+        <p className="text-sm text-muted-foreground">
+          Primary and secondary contact information for each non-country member.
+        </p>
       </CardHeader>
       <CardContent>
         {error && <p className="text-sm text-destructive">{error}</p>}

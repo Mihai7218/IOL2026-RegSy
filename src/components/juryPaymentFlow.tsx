@@ -265,7 +265,7 @@ export default function JuryPaymentFlow() {
                       name="additional_observers"
                       render={({ field }) => (
                         <div>
-                          <Label>Observers</Label>
+                          <Label>Observers (only available for Jury Members)</Label>
                           <Input type="number" 
                             placeholder={"0"} 
                             min={0} {...field} />
@@ -277,7 +277,7 @@ export default function JuryPaymentFlow() {
                       name="language_experts"
                       render={({ field }) => (
                         <div>
-                          <Label>Language experts</Label>
+                          <Label>Language experts (only available for Jury Members)</Label>
                           <Input type="number" 
                             placeholder={"0"} 
                             min={0} {...field} />

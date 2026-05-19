@@ -12,16 +12,17 @@ import { Skeleton } from '@/components/ui/skeleton'
 const NAV_LINKS = [
   { label: 'Overview', href: '/admin' },
   { label: 'Countries', href: '/admin/countries' },
-  { label: 'Contacts', href: '/admin/contacts' },
+  { label: 'Country Contacts', href: '/admin/contacts' },
+  { label: 'Country Members', href: '/admin/members' },
   { label: 'Teams', href: '/admin/teams' },
-  { label: 'Members', href: '/admin/members' },
-  { label: 'Jury Members', href: '/admin/juryMembers' },
-  { label: 'Jury Payment', href: '/admin/jury' },
+  { label: 'Country Payment', href: '/admin/payments' },
+  { label: 'Non-Country Contacts', href: '/admin/ncContacts' },
+  { label: 'Non-Country Members', href: '/admin/juryMembers' },
+  { label: 'Non-Country Payment', href: '/admin/jury' },
   { label: 'Languages', href: '/admin/languages' },
-  { label: 'Payment', href: '/admin/payments' },
   { label: 'Arrivals', href: '/admin/arrivals' },
   { label: 'Departures', href: '/admin/departures' },
-  { label: 'Sightseeing', href: '/admin/sightseeing' },
+  // { label: 'Sightseeing', href: '/admin/sightseeing' },
   { label: 'Invites', href: '/admin/invites' },
 ]
 

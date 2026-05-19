@@ -42,9 +42,9 @@ export default function AdminJuryPage() {
     <div className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle>Jury Members</CardTitle>
+          <CardTitle>Payment (Jury/LOC/Volunteers)</CardTitle>
           <p className="text-sm text-muted-foreground">
-            Overview of every jury member registered.
+            Overview of the payment status of non-country participants.
           </p>
         </CardHeader>
         <CardContent>

@@ -14,10 +14,10 @@ import { fetchMembers, fetchTeams, deleteMember, type Member, type Team } from '
 import { useAuth } from '@/context/AuthProvider'
 import { isJuryMember } from '@/lib/roles'
 
-type RoleBucket = 'Team Leader' | 'Team Contestant' | 'Observer' | 'Jury Member' | 'Language Expert'
+type RoleBucket = 'Team Leader' | 'Team Contestant' | 'Observer' | 'Jury Member' | 'Language Expert' | 'Volunteer' | 'LOC Member'
 
 const COUNTRY_ROLE_LABELS: RoleBucket[] = ['Team Leader', 'Team Contestant', 'Observer']
-const JURY_ROLE_LABELS: RoleBucket[] = ['Jury Member', 'Language Expert', 'Observer']
+const JURY_ROLE_LABELS: RoleBucket[] = ['Jury Member', 'LOC Member', 'Volunteer', 'Language Expert', 'Observer']
 
 export default function MembersPage() {
   const auth = useAuth()
@@ -57,6 +57,8 @@ export default function MembersPage() {
       'Observer': [],
       'Jury Member': [],
       'Language Expert': [],
+      'Volunteer': [],
+      'LOC Member': [],
     }
     for (const m of members) {
       const role = (m.role as RoleBucket) ?? ('Observer' as RoleBucket)
@@ -76,6 +78,8 @@ export default function MembersPage() {
     buckets['Observer'].sort((a, b) => (a.display_name ?? '').localeCompare(b.display_name ?? ''))
     buckets['Jury Member'].sort((a, b) => (a.display_name ?? '').localeCompare(b.display_name ?? ''))
     buckets['Language Expert'].sort((a, b) => (a.display_name ?? '').localeCompare(b.display_name ?? ''))
+    buckets['Volunteer'].sort((a, b) => (a.display_name ?? '').localeCompare(b.display_name ?? ''))
+    buckets['LOC Member'].sort((a, b) => (a.display_name ?? '').localeCompare(b.display_name ?? ''))
     return buckets
   }, [members, teamNameById])
 

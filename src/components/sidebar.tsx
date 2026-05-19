@@ -75,7 +75,7 @@ const menuItems = [
       {
         icon: Banknote,
         status: status.TIME_SENSITIVE,
-        label: "Payment (Jury)",
+        label: "Payment (Non-Country)",
         href: "/juryPayments",
         visible: ["admin"],
       },

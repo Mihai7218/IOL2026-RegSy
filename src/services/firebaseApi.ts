@@ -422,6 +422,40 @@ export const adminListContactsDetailed = async (): Promise<AdminContactRow[]> =>
     .sort((a, b) => a.country_name.localeCompare(b.country_name))
 }
 
+export type AdminNCContactRow = {
+  id: string
+  jury_member_name: string
+  primary_name?: string
+  primary_email?: string
+  primary_phone?: string
+  primary_whatsapp?: string
+  secondary_name?: string
+  secondary_email?: string
+  secondary_phone?: string
+}
+
+export const adminListNCContactsDetailed = async (): Promise<AdminNCContactRow[]> => {
+  const countriesSnap = await getDocs(collection(db, 'juryMembers'))
+  return countriesSnap.docs
+    .filter(adminTestFilter)
+    .map((countryDoc) => {
+      const data = countryDoc.data() as any
+      const contact = (data?.contact ?? {}) as Contact | undefined
+      return {
+        id: countryDoc.id,
+        jury_member_name: data?.jury_member_name ?? countryDoc.id,
+        primary_name: contact?.primary?.name,
+        primary_email: contact?.primary?.email,
+        primary_phone: contact?.primary?.phone,
+        primary_whatsapp: contact?.primary?.whatsapp,
+        secondary_name: contact?.secondary?.name,
+        secondary_email: contact?.secondary?.email,
+        secondary_phone: contact?.secondary?.phone,
+      }
+    })
+    .sort((a, b) => a.jury_member_name.localeCompare(b.jury_member_name))
+}
+
 export type AdminTeamRow = {
   id: string
   countryId: string

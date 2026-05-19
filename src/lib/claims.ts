@@ -47,24 +47,7 @@ async function getClaimsEager(u : User) {
         } catch (e) {
         console.error('AuthProvider: Failed to check jury member status', e)
         }
-
-        try {
-        const volunteerDoc = await getDoc(doc(db, 'volunteers', u.uid))
-        if (volunteerDoc.exists()) {
-            nextClaims.volunteer = true
-        }
-        } catch (e) {
-        console.error('AuthProvider: Failed to check volunteer status', e)
-        }
-
-        try {
-        const locDoc = await getDoc(doc(db, 'locMember', u.uid))
-        if (locDoc.exists()) {
-            nextClaims.locMember = true
-        }
-        } catch (e) {
-        console.error('AuthProvider: Failed to check LOC member status', e)
-        }
+        
         claims = nextClaims
     }
 }

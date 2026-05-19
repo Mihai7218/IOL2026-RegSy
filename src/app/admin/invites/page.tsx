@@ -26,15 +26,7 @@ export default function InvitesPage() {
           createFun = createCountryInviteCode
           break
         case "Jury":
-          createFun = createJuryMemberInviteCode
-          break
-        case "Volunteer":
-          setCode("")
-          createFun = createVolunteerInviteCode
-          break
-        case "LOC":
-          setCode("")
-          createFun = createLOCMemberInviteCode
+          createFun = (name, _) => createJuryMemberInviteCode(name, '1')
           break
       }
       const r = await createFun(name, code)
@@ -51,11 +43,7 @@ export default function InvitesPage() {
       case "Country":
           return "Country Name"
       case "Jury":
-          return "Jury Member Name"
-      case "Volunteer":
-          return "Volunteer Name"
-      case "LOC":
-          return "LOC Member Name"
+          return "Name"
       default:
         return "N/A"
     }
@@ -65,8 +53,6 @@ export default function InvitesPage() {
     switch (userType) {
       case "Country":
           return "Country Code"
-      case "Jury":
-          return "Jury Member Code"
       default:
         return "N/A"
     }
@@ -86,16 +72,14 @@ export default function InvitesPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="Country">Country</SelectItem>
-              <SelectItem value="Jury">Jury Member</SelectItem>
-              <SelectItem value="Volunteer">Volunteer</SelectItem>
-              <SelectItem value="LOC">LOC Member</SelectItem>
+              <SelectItem value="Jury">Jury, LOC, Volunteer</SelectItem>
             </SelectContent>
           </Select>
         </CardContent>
         {userType && <CardContent className='space-y-3'>
           <div className='grid grid-cols-2 gap-4'>
             <div><Label>{getField1(userType)}</Label><Input value={name} onChange={e => setName(e.target.value)} /></div>
-            {(userType === "Country" || userType === "Jury") && <div><Label>{getField2(userType)}</Label><Input value={code} onChange={e => setCode(e.target.value)} /></div>}
+            {(userType === "Country") && <div><Label>{getField2(userType)}</Label><Input value={code} onChange={e => setCode(e.target.value)} /></div>}
           </div>
           <Button type='button' onClick={create(userType)}>Create</Button>
           {result && (

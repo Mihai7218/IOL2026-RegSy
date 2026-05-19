@@ -13,10 +13,6 @@ export function getFolder(role: Role) : string {
       return "countries"
     case "jury":
       return "juryMembers"
-    case "volunteer":
-      return "volunteers"
-    case "loc":
-      return "locMembers"
     default:
       throw Error("failed to get folder");
   }
@@ -42,7 +38,7 @@ export function formatDatetimeEEST(iso?: string) {
   }
 }
 
-export const getRole = (claims : Claims | undefined) => claims?.country ? "country" : claims?.juryMember ? "jury" : claims?.volunteer ? "volunteer" : claims?.locMember ? "loc" : "guest"
+export const getRole = (claims : Claims | undefined) => claims?.country ? "country" : claims?.juryMember ? "jury" : "guest"
 
 export function setEquality<T>(a: Set<T>, b: Set<T>): boolean {
   return a.size == b.size && [...a].every((x) => b.has(x))

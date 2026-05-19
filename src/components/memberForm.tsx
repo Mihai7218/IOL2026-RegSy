@@ -25,7 +25,7 @@ import { formatDatetimeEEST } from '@/lib/utils'
 export type MemberFormValues = MemberSchemaForm & { id?: string }
 
 const COUNTRY_ROLES: Array<MemberSchemaForm['role']> = ['Team Leader', 'Team Contestant', 'Observer']
-const JURY_ROLES: Array<MemberSchemaForm['role']> = ['Jury Member', 'Observer', 'Language Expert']
+const JURY_ROLES: Array<MemberSchemaForm['role']> = ['Jury Member', 'Observer', 'Language Expert', 'Volunteer', 'LOC Member']
 const GENDERS = ['Male', 'Female', 'Other'] as const
 const DOCUMENTS = ['Passport', 'ID Card'] as const
 const ROOM_TYPES = ['Single (requires supplement)', 'Shared room'] as const

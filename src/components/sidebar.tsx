@@ -42,7 +42,7 @@ const menuItems = [
         status: status.TIME_SENSITIVE,
         label: "Main",
         href: "/",
-        visible: ["admin", "country", "volunteer", "jury"],
+        visible: ["admin", "country", "jury"],
       },
       {
         icon: SquareChartGantt,

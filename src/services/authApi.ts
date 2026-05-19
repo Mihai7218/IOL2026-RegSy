@@ -104,8 +104,6 @@ function determineRole(data: any) : [Role, UserInfo] {
       jury_member_code : data.jury_member_code,
       jury_member_name : data.jury_member_name,
     }]
-  if (data.volunteer_name) return ["volunteer", {volunteer_name : data.volunteer_name}]
-  if (data.loc_name) return ["loc", {loc_name: data.loc_name}]
   return ["guest", {}]
 }
 

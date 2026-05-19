@@ -26,7 +26,7 @@ export default function InvitesPage() {
           createFun = createCountryInviteCode
           break
         case "Jury":
-          createFun = createJuryMemberInviteCode
+          createFun = (name, _) => createJuryMemberInviteCode(name, '1')
           break
       }
       const r = await createFun(name, code)

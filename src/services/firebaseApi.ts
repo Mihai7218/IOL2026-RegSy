@@ -659,7 +659,24 @@ export const adminListAllMembersDetailed = async (): Promise<AdminMemberRow[]> =
       })
     })
   }
-  return rows.sort((a, b) => a.country_name.localeCompare(b.country_name))
+  return rows.sort((a, b) => {
+    const x = a.country_name.localeCompare(b.country_name)
+    if (x == 0) {
+      const y = a.team_name?.localeCompare(b.team_name ?? String.fromCharCode(0x7f)) ?? 1
+      if (a.role == 'Observer' && b.role == 'Observer') return a.display_name.localeCompare(b.display_name)
+      if (a.role == 'Observer' && b.role != 'Observer') return 1
+      if (b.role == 'Observer' && a.role != 'Observer') return -1
+      if (y == 0) {
+        const z = b.role.localeCompare(a.role)
+        if (z == 0) {
+          return a.display_name.localeCompare(b.display_name)
+        }
+        return z
+      }
+      return y
+    }
+    return x
+  })
 }
 
 export type AdminJuryMemberRow = Member & {

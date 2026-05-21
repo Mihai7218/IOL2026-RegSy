@@ -41,7 +41,7 @@ export default function AdminDeparturesPage() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Arrivals</CardTitle>
+        <CardTitle>Departures</CardTitle>
         <p className="text-sm text-muted-foreground">
           See all departures.
         </p>

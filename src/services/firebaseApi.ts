@@ -702,6 +702,10 @@ export const adminListAllJuryMemberMembersDetailed = async (): Promise<AdminJury
   }
   return rows.sort((a, b) => {
     const x = a.jury_member_name.localeCompare(b.jury_member_name)
+    if (a.role != 'Volunteer' && b.role == 'Volunteer') return -1
+    if (a.role == 'Volunteer' && b.role != 'Volunteer') return 1
+    if (a.role != 'LOC Member' && b.role == 'LOC Member') return -1
+    if (a.role == 'LOC Member' && b.role != 'LOC Member') return 1
     if (x == 0) {
       if (a.role == 'Jury Member') return -1
       return 1

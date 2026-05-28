@@ -14,6 +14,7 @@ import { fetchMembers, Member } from "@/services/firebaseApi"
 import { useEffect, useMemo, useState } from "react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { setEquality } from "@/lib/utils"
+import { Card, CardContent } from "./ui/card"
 
 export type TransportFormValues = FlightLegForm & { id?: string, members: string[]}
 
@@ -58,6 +59,7 @@ export function TransportForm({
   }
 
   const terminalValue = form.watch('terminal_option')
+  const direction = form.watch('direction')
   const memberOptions = useMemo(() => members.map((m) => ({ id: m.id!, name: m.display_name })), [members])
 
   function toLocalDatetimeInputValue(iso?: string) {
@@ -129,12 +131,12 @@ export function TransportForm({
             </div>
           )}
         />
-        <Controller
+        {direction === 'arrival' && (<Controller
           name="terminal_option"
           control={form.control}
           render={({ field }) => (
             <div>
-              <Label>Place of arrival to/departure from Bucharest</Label>
+              <Label>Place of arrival in Bucharest</Label>
               <RadioGroup className="mt-2 gap-2" value={field.value} onValueChange={field.onChange}>
                 {TERMINAL_OPTIONS.map((d) => {
                   const id = `document-${d}`
@@ -153,7 +155,32 @@ export function TransportForm({
               )}
             </div>
           )}
-        />
+        />)}
+        {direction === 'departure' && (<Controller
+          name="terminal_option"
+          control={form.control}
+          render={({ field }) => (
+            <div>
+              <Label>Place of departure from Bucharest</Label>
+              <RadioGroup className="mt-2 gap-2" value={field.value} onValueChange={field.onChange}>
+                {TERMINAL_OPTIONS.map((d) => {
+                  const id = `document-${d}`
+                  return (
+                    <div key={id} className="flex items-center gap-2">
+                      <RadioGroupItem id={id} value={d} />
+                      <Label htmlFor={id} className="cursor-pointer">
+                        {d}
+                      </Label>
+                    </div>
+                  )
+                })}
+              </RadioGroup>
+              {form.formState.errors.terminal_option && (
+                <FieldError errors={[form.formState.errors.terminal_option]} />
+              )}
+            </div>
+          )}
+        />)}
         {terminalValue === TERMINAL_OPTIONS[3] && (
           <Controller
             name="terminal_other"
@@ -169,20 +196,39 @@ export function TransportForm({
             )}
           />
         )}
-        <Controller
+        {direction === 'arrival' && (<Controller
           name="location"
           control={form.control}
           render={({ field }) => (
             <div>
-              <Label>Origin/Destination</Label>
+              <Label>Origin</Label>
+              <div>
+                This refers to the last hub before arriving in Bucharest.
+              </div>
               <Input placeholder="Enter location" {...field} />
               {form.formState.errors.location && (
                 <FieldError errors={[form.formState.errors.location]} />
               )}
             </div>
           )}
-        />
-        <Controller
+        />)}
+        {direction === 'departure' && (<Controller
+          name="location"
+          control={form.control}
+          render={({ field }) => (
+            <div>
+              <Label>Destination</Label>
+              <div>
+                This refers to the first hub after departing Bucharest.
+              </div>
+              <Input placeholder="Enter location" {...field} />
+              {form.formState.errors.location && (
+                <FieldError errors={[form.formState.errors.location]} />
+              )}
+            </div>
+          )}
+        />)}
+        {direction !== undefined && (<Controller
           name="airline"
           control={form.control}
           render={({ field }) => (
@@ -194,8 +240,8 @@ export function TransportForm({
               )}
             </div>
           )}
-        />
-        <Controller
+        />)}
+        {direction !== undefined && (<Controller
           name="flight_no"
           control={form.control}
           render={({ field }) => (
@@ -207,13 +253,13 @@ export function TransportForm({
               )}
             </div>
           )}
-        />
-        <Controller
+        />)}
+        {direction === 'arrival' && (<Controller
           name="datetime"
           control={form.control}
           render={({ field }) => (
             <div>
-              <Label>Date/Time</Label>
+              <Label>Date/Time of arrival in Bucharest</Label>
               <Input
                 type='datetime-local'
                 value={toLocalDatetimeInputValue(field.value)}
@@ -224,7 +270,24 @@ export function TransportForm({
               )}
             </div>
           )}
-        />
+        />)}
+        {direction === 'departure' && (<Controller
+          name="datetime"
+          control={form.control}
+          render={({ field }) => (
+            <div>
+              <Label>Date/Time of departure from Bucharest</Label>
+              <Input
+                type='datetime-local'
+                value={toLocalDatetimeInputValue(field.value)}
+                onChange={(e) => field.onChange(fromLocalToISO(e.target.value))}
+              />
+              {form.formState.errors.datetime && (
+                <FieldError errors={[form.formState.errors.datetime]} />
+              )}
+            </div>
+          )}
+        />)}
       </FieldGroup>
 
       <Controller

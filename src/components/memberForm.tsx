@@ -60,7 +60,7 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
   const [teams, setTeams] = useState<Team[]>([])
   const [transports, setTransports] = useState<FlightLeg[]>([])
   const [hasPreferences, setHasPreferences] = useState<string>(initialValues?.food_req === undefined || initialValues?.food_req?.length === 0 ? "" : "y")
-  const [hasAllergies, setHasAllergies] = useState<string>(initialValues?.other_food_allergies === undefined || initialValues.other_food_allergies === "" ? "" : "y")
+  const [hasAllergies, setHasAllergies] = useState<string>((initialValues?.food_allergies === undefined || initialValues?.food_allergies?.length === 0)  && (initialValues?.other_food_allergies === undefined || initialValues?.other_food_allergies === "") ? "" : "y")
 
   const form = useForm<MemberFormValues>({
     resolver: zodResolver(memberFormSchema as unknown as z.ZodType<MemberSchemaForm>),

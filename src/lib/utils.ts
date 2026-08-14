@@ -2,6 +2,7 @@ import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { Claims, Role } from "./roles"
 import { FunnelIcon } from "lucide-react"
+import { utcOffset } from "./loc"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -18,19 +19,19 @@ export function getFolder(role: Role) : string {
   }
 }
 
-export function formatDatetimeEEST(iso?: string) {
+export function formatDatetimeLocal(iso?: string) {
   if (!iso) return '—'
   try {
     const d = new Date(iso)
     const pad = (n: number) => String(n).padStart(2, '0')
     
-    const eestDate = new Date(d.getTime() + 3 * 60 * 60 * 1000)
+    const localDate = new Date(d.getTime() + utcOffset * 60 * 60 * 1000)
     
-    const yyyy = eestDate.getUTCFullYear()
-    const mm = pad(eestDate.getUTCMonth() + 1)
-    const dd = pad(eestDate.getUTCDate())
-    const hh = pad(eestDate.getUTCHours())
-    const min = pad(eestDate.getUTCMinutes())
+    const yyyy = localDate.getUTCFullYear()
+    const mm = pad(localDate.getUTCMonth() + 1)
+    const dd = pad(localDate.getUTCDate())
+    const hh = pad(localDate.getUTCHours())
+    const min = pad(localDate.getUTCMinutes())
     
     return `${dd}/${mm}/${yyyy} ${hh}:${min}`
   } catch {

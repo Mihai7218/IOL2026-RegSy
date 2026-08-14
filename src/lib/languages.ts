@@ -1,7 +1,8 @@
 export type Language = { name: string; code: string; official_name: string }
 
+//TODO: update working languages
 export const languages: Language[] = [
-  { name: 'Arabic', code: 'ar', official_name: 'العربية' },
+  // { name: 'Arabic', code: 'ar', official_name: 'العربية' },
   // { name: 'Azerbaijani', code: 'az', official_name: 'Azərbaycan dili' },
   { name: 'Bulgarian', code: 'bg', official_name: 'български' },
   { name: 'Chinese (simplified)', code: 'zh-CN', official_name: '简体中文' },
@@ -21,9 +22,9 @@ export const languages: Language[] = [
   { name: 'Kazakh', code: 'kk', official_name: 'қазақ тілі' },
   { name: 'Korean', code: 'ko', official_name: '한국어' },
   { name: 'Latvian', code: 'lv', official_name: 'latviešu' },
-  { name: 'Malay', code: 'ms', official_name: 'bahasa Melayu' },
-  //{ name: 'Nepali', code: 'ne', official_name: 'नेपाली' },
-  { name: 'Persian', code: 'fa', official_name: 'فارسی' },
+  // { name: 'Malay', code: 'ms', official_name: 'bahasa Melayu' },
+  // { name: 'Nepali', code: 'ne', official_name: 'नेपाली' },
+  // { name: 'Persian', code: 'fa', official_name: 'فارسی' },
   { name: 'Polish', code: 'pl', official_name: 'polski' },
   { name: 'Portuguese (Brazilian)', code: 'pt-BR', official_name: 'português (Brasil)' },
   { name: 'Romanian', code: 'ro', official_name: 'română' },

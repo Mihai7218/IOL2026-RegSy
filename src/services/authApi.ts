@@ -40,7 +40,6 @@ export type CountryInfo = {
 };
 
 export type JuryInfo = {
-  jury_member_code: string;
   jury_member_name: string;
 };
 
@@ -100,8 +99,7 @@ function determineRole(data: any) : [Role, UserInfo] {
       country_code : data.country_code,
       country_name : data.country_name,
     }]
-  if (data.jury_member_code) return ["jury", {
-      jury_member_code : data.jury_member_code,
+  if (data.jury_member_name) return ["jury", {
       jury_member_name : data.jury_member_name,
     }]
   return ["guest", {}]

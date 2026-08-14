@@ -37,6 +37,7 @@ import Images from "next/image"
 import { toast } from "sonner"
 import { storage } from "@/lib/firebase"
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage"
+import { bankAccount, emailAddress } from "@/lib/loc"
 
 export default function JuryPaymentFlow() {
   const { claims } = useAuth()
@@ -397,14 +398,7 @@ export default function JuryPaymentFlow() {
                     <CardContent className="text-sm text-muted-foreground">
                       <div className="space-y-1">
                         <p>Transfer the total amount to the following bank account:</p>
-                        <ul className="list-disc pl-6">
-                          <li>Beneficiary: ASOCIAȚIA ALUMNI A UNIVERSITĂȚII DIN BUCUREȘTI</li>
-                          <li>Address: B-dul Regina Elisabeta, nr. 4-12,et. Subsol, Ap.Sala M 6, Bucureşti, Sector 3</li>
-                          <li>IBAN: RO52BRDE410SV57544994100</li>
-                          <li>CUI: 29223620</li>
-                          <li>Bank: BRD, Compozitorilor Branch</li>
-                          <li>SWIFT: BRDEROBU</li>
-                        </ul>
+                        {bankAccount}
                         <p>Include your country in the transfer remark. Keep the transaction/reference number.</p>
                         <p className="font-semibold">Please ensure that you cover all transaction fees.</p>
                       </div>
@@ -487,7 +481,7 @@ export default function JuryPaymentFlow() {
                     <Card>
                       <CardContentFirst className="text-sm text-muted-foreground">
                         <div className="space-y-1">
-                          If you require an invoice, please send an email to <a href="mailto:iol2026ro@gmail.com">iol2026ro@gmail.com</a> with the following details:
+                          If you require an invoice, please send an email to <a href={`mailto:${emailAddress}`}>{emailAddress}</a> with the following details:
                           <ul className="list-disc pl-6">
                             <li>Name of the institution</li>
                             <li>Full postal address (street, number, zipcode, city)</li>

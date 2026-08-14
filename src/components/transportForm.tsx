@@ -15,6 +15,7 @@ import { useEffect, useMemo, useState } from "react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { setEquality } from "@/lib/utils"
 import { Card, CardContent } from "./ui/card"
+import { hostCity, utcOffset } from "@/lib/loc"
 
 export type TransportFormValues = FlightLegForm & { id?: string, members: string[]}
 
@@ -64,18 +65,18 @@ export function TransportForm({
 
   function toLocalDatetimeInputValue(iso?: string) {
     if (!iso) return ''
-    // Convert ISO to "YYYY-MM-DDTHH:mm" for datetime-local input in EEST (UTC+3)
+    // Convert ISO to "YYYY-MM-DDTHH:mm" for datetime-local input in local time
     const d = new Date(iso)
     const pad = (n: number) => String(n).padStart(2, '0')
     
-    // Add 3 hours to convert from UTC to EEST
-    const eestDate = new Date(d.getTime() + 3 * 60 * 60 * 1000)
+    // Add 3 hours to convert from UTC to local time
+    const localDate = new Date(d.getTime() + utcOffset * 60 * 60 * 1000)
     
-    const yyyy = eestDate.getUTCFullYear()
-    const mm = pad(eestDate.getUTCMonth() + 1)
-    const dd = pad(eestDate.getUTCDate())
-    const hh = pad(eestDate.getUTCHours())
-    const min = pad(eestDate.getUTCMinutes())
+    const yyyy = localDate.getUTCFullYear()
+    const mm = pad(localDate.getUTCMonth() + 1)
+    const dd = pad(localDate.getUTCDate())
+    const hh = pad(localDate.getUTCHours())
+    const min = pad(localDate.getUTCMinutes())
     return `${yyyy}-${mm}-${dd}T${hh}:${min}`
   }
 
@@ -92,7 +93,7 @@ export function TransportForm({
         parseInt(yyyy),
         parseInt(mm) - 1,
         parseInt(dd),
-        parseInt(hh) - 3,
+        parseInt(hh) - utcOffset,
         parseInt(min),
         0
       )
@@ -136,7 +137,7 @@ export function TransportForm({
           control={form.control}
           render={({ field }) => (
             <div>
-              <Label>Place of arrival in Bucharest</Label>
+              <Label>Place of arrival in {hostCity}</Label>
               <RadioGroup className="mt-2 gap-2" value={field.value} onValueChange={field.onChange}>
                 {TERMINAL_OPTIONS.map((d) => {
                   const id = `document-${d}`
@@ -161,7 +162,7 @@ export function TransportForm({
           control={form.control}
           render={({ field }) => (
             <div>
-              <Label>Place of departure from Bucharest</Label>
+              <Label>Place of departure from {hostCity}</Label>
               <RadioGroup className="mt-2 gap-2" value={field.value} onValueChange={field.onChange}>
                 {TERMINAL_OPTIONS.map((d) => {
                   const id = `document-${d}`
@@ -203,7 +204,7 @@ export function TransportForm({
             <div>
               <Label>Origin</Label>
               <div>
-                This refers to the last hub before arriving in Bucharest.
+                This refers to the last hub before arriving in {hostCity}.
               </div>
               <Input placeholder="Enter location" {...field} />
               {form.formState.errors.location && (
@@ -219,7 +220,7 @@ export function TransportForm({
             <div>
               <Label>Destination</Label>
               <div>
-                This refers to the first hub after departing Bucharest.
+                This refers to the first hub after departing {hostCity}.
               </div>
               <Input placeholder="Enter location" {...field} />
               {form.formState.errors.location && (
@@ -259,7 +260,7 @@ export function TransportForm({
           control={form.control}
           render={({ field }) => (
             <div>
-              <Label>Date/Time of arrival in Bucharest</Label>
+              <Label>Date/Time of arrival in {hostCity}</Label>
               <Input
                 type='datetime-local'
                 value={toLocalDatetimeInputValue(field.value)}
@@ -276,7 +277,7 @@ export function TransportForm({
           control={form.control}
           render={({ field }) => (
             <div>
-              <Label>Date/Time of departure from Bucharest</Label>
+              <Label>Date/Time of departure from {hostCity}</Label>
               <Input
                 type='datetime-local'
                 value={toLocalDatetimeInputValue(field.value)}

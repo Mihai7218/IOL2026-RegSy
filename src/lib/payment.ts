@@ -4,8 +4,7 @@ import { LucideSwitchCamera } from "lucide-react"
 
 export type PaymentMethod = "bank"
 
-// SAMPLE pricing config (case-by-case). Replace with real values when available.
-// Base price by plan for a general (non-previous-host) country.
+// TODO: update fees
 export const BASE_FIRST_TEAM_BY_PLAN: Record<
   Plan,
   Record<RegistrationDetailValues["country_status"], number>
@@ -56,6 +55,12 @@ export const PRICING = {
   singleRoomFee: 2300, // per single room request
 }
 
+const lateExtraFee = 1000
+
+const defaultRegularEnd = new Date("2026-04-30T23:59:59Z")
+const defaultEarlyEnd = new Date("2026-03-15T23:59:59Z")
+//end of TODO
+
 export type CommonPriceBreakdown = {
   observersCost: number
   singleRoomsCost: number
@@ -76,10 +81,10 @@ export type PriceBreakdown  = {
 
 export function computeFirstTeamFee(detail: Pick<RegistrationDetailValues, "plan" | "country_status">) {
   if (detail.plan === "late") {
-    // Late payment formula: base regular price + 1000 per team per month after deadline (rounded).
+    // Late payment formula: base regular price + lateExtraFee per team per month after deadline (rounded).
     const base = BASE_FIRST_TEAM_BY_PLAN["regular"][detail.country_status]
     const monthsLate = computeMonthsLate()
-    const lateSurchargePerTeam = 1000 * monthsLate
+    const lateSurchargePerTeam = lateExtraFee * monthsLate
     return [round2(base + lateSurchargePerTeam), monthsLate]
   }
 
@@ -89,9 +94,9 @@ export function computeFirstTeamFee(detail: Pick<RegistrationDetailValues, "plan
 }
 
 // Compute whole months late based on current date and the regular deadline.
-// 1000 is charged per team per month (rounded to nearest whole month, minimum 1 when after deadline).
+// lateExtraFee is charged per team per month (rounded to nearest whole month, minimum 1 when after deadline).
 function computeMonthsLate(now = new Date(), regularEndOverride?: Date): number {
-  const regularEnd = regularEndOverride ?? new Date("2026-04-30T23:59:59Z")
+  const regularEnd = regularEndOverride ?? defaultRegularEnd
   if (now <= regularEnd) return 0
 
   const msPerMonthApprox = 31 * 24 * 60 * 60 * 1000
@@ -103,7 +108,7 @@ function computeMonthsLate(now = new Date(), regularEndOverride?: Date): number 
 
 function subtract1k(detail: RegistrationDetailValues, monthsLate: number): number {
   if (detail.plan !== "late" || detail.number_of_teams < 2) return 0
-  return 1000 * monthsLate
+  return lateExtraFee * monthsLate
 }
 
 export function calculatePricing(detail: RegistrationDetailValues): PriceBreakdown {
@@ -154,8 +159,8 @@ function round2(n: number) {
 // Simple helpers to decide plan by date windows
 export type Plan = RegistrationDetailValues["plan"]
 export function decidePlan(now = new Date(), windows?: { earlyEnd: Date; regularEnd: Date }): Plan {
-  const earlyEnd = windows?.earlyEnd ?? new Date("2026-03-15T23:59:59Z")
-  const regularEnd = windows?.regularEnd ?? new Date("2026-04-30T23:59:59Z")
+  const earlyEnd = windows?.earlyEnd ?? defaultEarlyEnd
+  const regularEnd = windows?.regularEnd ?? defaultRegularEnd
   if (now <= earlyEnd) return "early bird"
   if (now <= regularEnd) return "regular"
   return "late"
@@ -171,7 +176,7 @@ export function decideCountryStatus(countryKey?: string, previousHosts?: string[
     : "Not accredited"
 }
 
-// SAMPLE list, replace with your actual host country keys
+// TODO: check previous hosts
 export const DEFAULT_PREVIOUS_HOSTS = [
     "BGR",
     "NLD",
@@ -190,9 +195,10 @@ export const DEFAULT_PREVIOUS_HOSTS = [
     "IMN",
     "BRA",
     "TWN",
-    "TEST3",
+    "ROU",
   ]
 
+// TODO: update accredited countries
   export const DEFAULT_ACCREDITED = [
     "AUS",
     "BRA",
@@ -208,7 +214,7 @@ export const DEFAULT_PREVIOUS_HOSTS = [
     "HKG",
     "HUN",
     "IND",
-    "IDP",
+    "IDP", 
     "IRN",
     "IRL",
     "IMN",
@@ -238,8 +244,7 @@ export const DEFAULT_PREVIOUS_HOSTS = [
     "USA",
     "ESP",
     "CHN",
-    "TEST2",
-    "TEST3",
   ]
 
-  export const FUTURE_HOST = "THA"
+//TODO: update future host
+  export const FUTURE_HOST = ""

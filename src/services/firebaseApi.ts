@@ -7,7 +7,7 @@ import { useAuth } from '@/context/AuthProvider'
 import { getClaims } from '@/lib/claims'
 import { auth, db } from '@/lib/firebase'
 import { Language, languages } from '@/lib/languages'
-import { formatDatetimeEEST, getFolder, getRole } from '@/lib/utils'
+import { formatDatetimeLocal, getFolder, getRole } from '@/lib/utils'
 import { PaymentStep } from '@/schemas/payment'
 import {
   collection,
@@ -538,7 +538,7 @@ const adminListAllTransportsDetailed = async (type: 'arrival' | 'departure'): Pr
             id: memberDoc.id,
             name: name,
             member: member.display_name,
-            datetime: formatDatetimeEEST(transport.datetime),
+            datetime: formatDatetimeLocal(transport.datetime),
             location_BUH: locationConverter(transport.terminal),
             location_OTH: transport.location,
             airline: transport.airline,
@@ -553,7 +553,7 @@ const adminListAllTransportsDetailed = async (type: 'arrival' | 'departure'): Pr
             id: memberDoc.id,
             name: name,
             member: member.display_name,
-            datetime: formatDatetimeEEST(transport.datetime),
+            datetime: formatDatetimeLocal(transport.datetime),
             location_BUH: locationConverter(transport.terminal),
             location_OTH: transport.location,
             airline: transport.airline,
@@ -585,7 +585,7 @@ const adminListAllTransportsDetailed = async (type: 'arrival' | 'departure'): Pr
             id: memberDoc.id,
             name: name,
             member: member.display_name,
-            datetime: formatDatetimeEEST(transport.datetime),
+            datetime: formatDatetimeLocal(transport.datetime),
             location_BUH: locationConverter(transport.terminal),
             location_OTH: transport.location,
             airline: transport.airline,
@@ -600,7 +600,7 @@ const adminListAllTransportsDetailed = async (type: 'arrival' | 'departure'): Pr
             id: memberDoc.id,
             name: name,
             member: member.display_name,
-            datetime: formatDatetimeEEST(transport.datetime),
+            datetime: formatDatetimeLocal(transport.datetime),
             location_BUH: locationConverter(transport.terminal),
             location_OTH: transport.location,
             airline: transport.airline,
@@ -808,7 +808,7 @@ export type AdminPaymentRow = {
 }
 
 function adminTestFilter(entry: any) : boolean {
-    const x = entry.data()?.country_code ?? entry.data()?.jury_member_code ?? "" as string
+    const x = entry.data()?.country_code ?? entry.data()?.jury_member_name ?? "" as string
     return !(x.includes("ADM") || x.includes("TEST") || x === "")
 }
 
@@ -1000,10 +1000,8 @@ export const createCountryInviteCode = async (
 
 export const createJuryMemberInviteCode = async (
   _jury_member_name: string,
-  _jury_member_code: string,
 ): Promise<{ code: string; created_at: string }> => {
   return createInviteCode({
-    jury_member_code: _jury_member_code,
     jury_member_name: _jury_member_name,
   })
 }

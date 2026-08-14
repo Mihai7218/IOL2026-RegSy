@@ -20,7 +20,8 @@ import { excursionOptions } from '@/lib/excursion'
 import { isCountry, isJuryMember } from '@/lib/roles'
 import { useAuth } from '@/context/AuthProvider'
 import { Card, CardContent, CardContentFirst } from './ui/card'
-import { formatDatetimeEEST } from '@/lib/utils'
+import { formatDatetimeLocal } from '@/lib/utils'
+import { hostCity } from '@/lib/loc'
 
 export type MemberFormValues = MemberSchemaForm & { id?: string }
 
@@ -107,8 +108,8 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
   const roomType = form.watch('room_type')
   const genderValue = form.watch('gender')
   const teamOptions = useMemo(() => teams.map((t) => ({ id: t.id!, name: t.team_name })), [teams])
-  const arrivalOptions = useMemo(() => transports.filter((fl) => fl.direction == 'arrival').map((t) => ({ id: t.id!, name: `${t.terminal} -> ${t.location} @ ${formatDatetimeEEST(t.datetime)}` })), [transports])
-  const departureOptions = useMemo(() => transports.filter((fl) => fl.direction == 'departure').map((t) => ({ id: t.id!, name: `${t.terminal} -> ${t.location} @ ${formatDatetimeEEST(t.datetime)}` })), [transports])
+  const arrivalOptions = useMemo(() => transports.filter((fl) => fl.direction == 'arrival').map((t) => ({ id: t.id!, name: `${t.terminal} -> ${t.location} @ ${formatDatetimeLocal(t.datetime)}` })), [transports])
+  const departureOptions = useMemo(() => transports.filter((fl) => fl.direction == 'departure').map((t) => ({ id: t.id!, name: `${t.terminal} -> ${t.location} @ ${formatDatetimeLocal(t.datetime)}` })), [transports])
 
   async function handleSubmit(values: MemberFormValues) {
     await onSubmit({ ...values, id: initialValues?.id })
@@ -491,7 +492,7 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
         control={form.control}
         render={({ field }) => (
           <div>
-            <Label>Arrival (to Bucharest)</Label>
+            <Label>Arrival (in {hostCity})</Label>
             <Select value={field.value || undefined} onValueChange={field.onChange}>
               <SelectTrigger className="mt-1">
                 <SelectValue placeholder="Select arrival" />
@@ -515,7 +516,7 @@ export function MemberForm({ initialValues, onSubmit }: { initialValues?: Partia
         control={form.control}
         render={({ field }) => (
           <div>
-            <Label>Departure (from Bucharest)</Label>
+            <Label>Departure (from {hostCity})</Label>
             <Select value={field.value || undefined} onValueChange={field.onChange}>
               <SelectTrigger className="mt-1">
                 <SelectValue placeholder="Select departure" />

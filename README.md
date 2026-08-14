@@ -1,10 +1,10 @@
-# IOL 2025 Registration App
+# IOL 2026 RegSy
 ## Structure
 - Frontend: Next.js, ShadCN UI, React Hook Form, Zod
 - Backend: Firebase Authentication, Firestore, Cloud Functions
 ## Quick start
-1. Create a Firebase project. Enable Authentication (Email/Password + Google), Firestore, and Functions.
-2. Copy `.env.local.example` to `.env.local` and set values.
+1. Create a Firebase project. Enable Authentication (Email/Password + Google), Firestore, and Storage.
+2. Copy `.env.local.example` to `.env.local` and set values (from `Project Settings > General > Your Apps`).
 3. Install and run:
    ```bash
    npm i
@@ -22,9 +22,15 @@
    ```bash
    npx firebase deploy --only firestore:rules
    ```
-6. Manually create the first invitation code document in Firestore under `/invitationCodes/{code}` to onboard the first country delegate.
+6. Manually create the first invitation code document in Firestore under `/invitationCodes/{code}` to onboard the first account.
 7. Create an admin user as described below.
 8. After setting up the admin account, please change the Firestore rules to restrict access appropriately.
+9. Personalise RegSy for the current edition:
+   1. Add the LOC details in `src/lib/loc.tsx`.
+   2. Add the registration fees in `src/lib/payment.ts` and as a picture in `public/images/misc/prices.png`.
+   3. Update the working languages list in `src/lib/languages.ts`.
+   4. Change the visual elements in `public/images/background/background.jpg`, `public/images/logo/above_login.svg` and `public/images/logo/logo.png`.
+
 
 ### How to create an admin user
 1. Open the Firebase Console and navigate to Firestore.
@@ -33,6 +39,7 @@
 ### How to create an invitation code
 1. Navigate to the Firestore console and select the `invitationCodes` collection.
 2. Click "Add Document" and enter a unique code as the document ID. For the fields, please refer to `createInviteCode` from `@/services/firebaseApi.ts`.
+
 
 ## Available scripts
 - `npm run dev` – Start the Next.js dev server with Fast Refresh.
@@ -145,7 +152,7 @@ To deploy the Firestore security rules defined in `firestore.rules`:
 
 Make sure your active Firebase project (`firebase use`) matches the project configured in your `.env.local`.
 
-## Unfinished features & todos
+## Unfinished features & todos (2025)
 - [ ] Verification steps for payments (e.g. email confirmation).
 
 - (Notes: I use resend for the email service in the original plan.)

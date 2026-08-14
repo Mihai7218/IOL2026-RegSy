@@ -18,7 +18,8 @@ import { Separator } from '@/components/ui/separator'
 import { Item, ItemContent, ItemHeader, ItemMedia, ItemTitle } from '@/components/ui/item'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { TERMINAL_OPTIONS } from '@/schemas/transport'
-import { formatDatetimeEEST } from '@/lib/utils'
+import { formatDatetimeLocal } from '@/lib/utils'
+import { hostCity } from '@/lib/loc'
 
 type MemberMap = Record<string, Member[]>
 
@@ -153,8 +154,8 @@ export default function TransportPage() {
               </CardHeader>
               <CardContent className='space-y-3'>
                 <div className='text-sm'>Origin: <span className='font-medium'>{t.location || '—'}</span></div>
-                <div className='text-sm'>Arrival location in Bucharest: <span className='font-medium'>{t.terminal || '—'}</span></div>
-                <div className='text-sm'>Date/Time: <span className='font-medium'>{formatDatetimeEEST(t.datetime || '—')}</span></div>
+                <div className='text-sm'>Arrival location in {hostCity}: <span className='font-medium'>{t.terminal || '—'}</span></div>
+                <div className='text-sm'>Date/Time: <span className='font-medium'>{formatDatetimeLocal(t.datetime || '—')}</span></div>
                 <div className='text-sm'>Transport no.: <span className='font-medium'>{t.flight_no || '—'}</span></div>
                 <div className='text-sm'>Transport operator: <span className='font-medium'>{t.airline || '—'}</span></div>
 
@@ -206,8 +207,8 @@ export default function TransportPage() {
               </CardHeader>
               <CardContent className='space-y-3'>
                 <div className='text-sm'>Destination: <span className='font-medium'>{t.location || '—'}</span></div>
-                <div className='text-sm'>Departure location from Bucharest: <span className='font-medium'>{t.terminal || '—'}</span></div>
-                <div className='text-sm'>Date/Time: <span className='font-medium'>{formatDatetimeEEST(t.datetime || '—')}</span></div>
+                <div className='text-sm'>Departure location from {hostCity}: <span className='font-medium'>{t.terminal || '—'}</span></div>
+                <div className='text-sm'>Date/Time: <span className='font-medium'>{formatDatetimeLocal(t.datetime || '—')}</span></div>
                 <div className='text-sm'>Transport no.: <span className='font-medium'>{t.flight_no || '—'}</span></div>
                 <div className='text-sm'>Transport operator: <span className='font-medium'>{t.airline || '—'}</span></div>
 

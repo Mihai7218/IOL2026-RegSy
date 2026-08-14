@@ -31,7 +31,7 @@ import {
 import { Item, ItemContent, ItemDescription, ItemGroup, ItemHeader, ItemTitle } from "@/components/ui/item"
 import { calculateJuryPricing, calculatePricing, decideCountryStatus, decidePlan } from "@/lib/payment"
 import { useAuth } from "@/context/AuthProvider"
-import { saveRegistrationDetails, submitPaymentConfirmation, loadPaymentState, saveJuryDetails } from "@/services/paymenApi"
+import { saveRegistrationDetails, submitPaymentConfirmation, loadPaymentState, saveJuryDetails, submitJuryConfirmation } from "@/services/paymenApi"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import Images from "next/image"
 import { toast } from "sonner"
@@ -168,7 +168,7 @@ export default function JuryPaymentFlow() {
   async function onSubmitConfirmation(values: PaymentConfirmationValues) {
     try {
       const totals = breakdown
-      await submitPaymentConfirmation(
+      await submitJuryConfirmation(
         values,
         {
           subtotal: totals.subtotal,

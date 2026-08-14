@@ -55,17 +55,18 @@ export async function saveJuryDetails(
 }
 
 // Persist payment confirmation info and step under /countries/{uid}/payment
-export async function submitPaymentConfirmation(
+async function baseSubmitPaymentConfirmation(
 	data: PaymentConfirmationValues,
 	totals: { subtotal: number; totalBank: number },
 	step: number,
+	dbName: string,
 ): Promise<void> {
 	const user = auth.currentUser
 	if (!user) {
 		throw new Error("Not authenticated")
 	}
 
-	const countryRef = doc(db, "countries", user.uid)
+	const countryRef = doc(db, dbName, user.uid)
 	const prev = (await getDoc(countryRef)).data()?.payment ?? {}
 	await setDoc(
 		countryRef,
@@ -86,6 +87,22 @@ export async function submitPaymentConfirmation(
 		},
 		{ merge: true },
 	)
+}
+
+export async function submitPaymentConfirmation (
+	data: PaymentConfirmationValues,
+	totals: { subtotal: number; totalBank: number },
+	step: number,
+): Promise<void> {
+	return baseSubmitPaymentConfirmation(data, totals, step, "countries")
+}
+
+export async function submitJuryConfirmation (
+	data: PaymentConfirmationValues,
+	totals: { subtotal: number; totalBank: number },
+	step: number,
+): Promise<void> {
+	return baseSubmitPaymentConfirmation(data, totals, step, "juryMembers")
 }
 
 // Load existing payment data (including step and totals) for current user
